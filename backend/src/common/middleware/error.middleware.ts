@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from "express";
-import { env } from "../../config/env.config.js";
-import { AppError } from "../errors/AppError.js";
+import { env } from "@/config/env.js";
+import { AppError } from "@/common/errors/app-error.js";
 
 const NODE_ENV = env.NODE_ENV;
 

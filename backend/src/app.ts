@@ -2,8 +2,8 @@ import express, { NextFunction, Request, Response } from "express";
 import helmet from "helmet";
 import cors from "cors";
 import cookieParser from "cookie-parser";
-import { globalErrorHandler } from "./common/middleware/error.middleware.js";
-import { AppError } from "./common/errors/AppError.js";
+import { globalErrorHandler } from "@/common/middleware/error.middleware.js";
+import { AppError } from "@/common/errors/app-error.js";
 
 export const app = express();
 
