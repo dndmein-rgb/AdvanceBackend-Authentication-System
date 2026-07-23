@@ -28,8 +28,6 @@ model User{
 
   sessions   Session[]
   userRoles  UserRole[]
-
-  @@index([email])
 }
 
 model Session{
@@ -56,7 +54,10 @@ createdAt    DateTime       @default(now())
 
 userRoles       UserRole[]
 rolePermissions  RolePermission[]
+
 }
+
+
 
 
 model Permission{
@@ -68,7 +69,7 @@ rolePermissions     RolePermission[]
 }
 
 model UserRole{
-userId      String  
+userId      String
 roleId      String
 
 user    User    @relation(fields:[userId],references:[id] , onDelete:Cascade)
@@ -82,7 +83,7 @@ model RolePermission{
 roleId            String
 permissionId      String
 
-assignedAt        DateTime
+assignedAt        DateTime  @default(now())
 
 role              Role          @relation(fields:[roleId],references:[id],onDelete:Cascade)
 permission        Permission    @relation(fields:[permissionId],references:[id],onDelete:Cascade)

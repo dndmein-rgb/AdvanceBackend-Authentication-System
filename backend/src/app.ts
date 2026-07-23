@@ -27,6 +27,10 @@ app.get("/health-check", (_, res: Response) => {
   });
 });
 
+import authRouter from "@/modules/auth/auth.route"
+
+app.use("/api/v1/auth",authRouter)
+
 app.use((req: Request, _res: Response, next: NextFunction) => {
   next(
     new AppError(
