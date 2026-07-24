@@ -19,7 +19,7 @@ export const registerUserSchema = z.object({
 export const loginUserSchema = z.object({
   email: z.email("Invalid email address").trim().toLowerCase(),
   password:z.string().min(1,"Password is required")
-})
+}).strict()
 
 
 export type RegisterUserDTO = z.infer<typeof registerUserSchema>;
