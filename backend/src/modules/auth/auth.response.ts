@@ -8,3 +8,12 @@ export interface UserResponse {
   readonly createdAt: Date;
   readonly updatedAt: Date;
 }
+
+export interface AuthTokens{
+  readonly accessToken: string;
+  readonly refreshToken:string
+}
+
+export interface AuthRespone extends AuthTokens{
+  readonly user:UserResponse
+}
