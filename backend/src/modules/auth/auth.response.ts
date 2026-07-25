@@ -9,11 +9,12 @@ export interface UserResponse {
   readonly updatedAt: Date;
 }
 
-export interface AuthTokens{
+export interface AuthTokens {
   readonly accessToken: string;
-  readonly refreshToken:string
+  readonly refreshToken: string;
 }
 
-export interface AuthRespone extends AuthTokens{
-  readonly user:UserResponse
+export interface AuthRespone extends AuthTokens {
+  readonly user: UserResponse;
 }
+export interface RefreshTokenResponse extends AuthTokens {}

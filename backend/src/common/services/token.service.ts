@@ -8,4 +8,14 @@ export class TokenService {
   static generateRefreshToken(): string {
     return crypto.randomBytes(64).toString("hex");
   }
+  static verifyRefreshToken(
+    refreshToken: string,
+    refreshTokenHash: string,
+  ): boolean {
+    const hash = this.hashRefreshToken(refreshToken);
+    return crypto.timingSafeEqual(
+      Buffer.from(hash),
+      Buffer.from(refreshTokenHash),
+    );
+  }
 }

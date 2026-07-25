@@ -2,7 +2,7 @@ import { asyncHandler } from "@/common/middleware/async-handler";
 import type { Request, Response } from "express";
 import { authService } from "./auth.container";
 import { sendResponse } from "@/common/utils/send-response";
-import { setRefreshTokenCookie } from "@/common/utils/cookie";
+import { clearRefreshTokenCookie, setRefreshTokenCookie } from "@/common/utils/cookie";
 
 export const registerUserController = asyncHandler(
   async (req: Request, res: Response) => {
@@ -30,9 +30,7 @@ export const loginUserController = asyncHandler(
       userAgent: req.get("user-agent"),
       ipAddress: req.ip,
     });
-    console.log("token: ",result.refreshToken);
     setRefreshTokenCookie(res, result.refreshToken);
-    console.log(res.getHeaders());
 
     sendResponse(res, 200, {
       success: true,
@@ -41,6 +39,38 @@ export const loginUserController = asyncHandler(
         user: result.user,
         accessToken: result.accessToken,
       },
+    });
+  },
+);
+
+export const refreshTokenController = asyncHandler(
+  async (req: Request, res: Response) => {
+    const refreshToken = req.cookies.refreshToken;
+    const result = await authService.refreshToken({ refreshToken });
+    setRefreshTokenCookie(res, result.refreshToken);
+    sendResponse(res, 200, {
+      success: true,
+      message: "Token refreshed successfully",
+      data: {
+        accessToken: result.accessToken,
+      },
+    });
+  },
+);
+export const logoutUserController = asyncHandler(
+  async (req: Request, res: Response) => {
+    const refreshToken = req.cookies.refreshToken;
+
+    await authService.logout({
+      refreshToken,
+    });
+
+    clearRefreshTokenCookie(res);
+
+    sendResponse(res, 200, {
+      success: true,
+      message: "Logged out successfully",
+      data: null,
     });
   },
 );

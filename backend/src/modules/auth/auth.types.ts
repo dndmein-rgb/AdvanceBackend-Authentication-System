@@ -9,9 +9,9 @@ export interface CreateSessionDTO {
   readonly expiresAt: Date;
 }
 
-export interface RegisterUserServiceDTO extends RegisterUserDTO{
+export interface RegisterUserServiceDTO extends RegisterUserDTO {
   readonly userAgent: string;
-  readonly ipAddress:string
+  readonly ipAddress: string;
 }
 
 export interface LoginUserServiceDTO extends LoginUserDTO {
@@ -22,4 +22,23 @@ export interface LoginUserServiceDTO extends LoginUserDTO {
 export interface CreateUserDTO {
   readonly email: string;
   readonly passwordHash: string;
+}
+
+export interface RefreshTokenPayload {
+  readonly userId: string;
+  readonly sessionId: string;
+}
+
+export interface RefreshTokenServiceDTO {
+  readonly refreshToken: string;
+}
+
+export interface RotateSessionDTO {
+  readonly sessionId: string;
+  readonly refreshTokenHash: string;
+  readonly expiresAt: Date;
+}
+
+export interface LogoutServiceDTO{
+  readonly refreshToken?:string
 }
