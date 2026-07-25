@@ -4,13 +4,18 @@ import { PasswordService } from "@/common/services/password.service";
 import { toUserResponse } from "./auth.mapper";
 
 import type { IAuthRepository } from "./auth.interface";
-import type { LoginUserServiceDTO, RegisterUserServiceDTO } from "./auth.types";
+import type {
+  LoginUserServiceDTO,
+  LogoutServiceDTO,
+  RefreshTokenServiceDTO,
+  RegisterUserServiceDTO,
+} from "./auth.types";
 import { generateSessionId } from "./auth.utils";
 import { JwtService } from "@/common/services/jwt.services";
 import { TokenService } from "@/common/services/token.service";
 import { env } from "@/config/env";
 import ms from "ms";
-import { AuthRespone, AuthTokens } from "./auth.response";
+import { AuthRespone, AuthTokens, RefreshTokenResponse } from "./auth.response";
 
 export class AuthService {
   constructor(private readonly authRepo: IAuthRepository) {}
@@ -21,18 +26,18 @@ export class AuthService {
     userAgent: string,
   ): Promise<AuthTokens> {
     const sessionId = generateSessionId();
-    
+
     const accessToken = JwtService.signAccessToken({ userId, sessionId });
     const refreshToken = JwtService.signRefreshToken({ userId, sessionId });
 
     const refreshTokenHash = TokenService.hashRefreshToken(refreshToken);
-    
+
     const refreshTokenExpiry = ms(env.JWT_REFRESH_TOKEN_EXPIRY);
-    
+
     if (typeof refreshTokenExpiry !== "number") {
       throw new AppError("Invalid refresh token expiry configuration", 500);
     }
-    
+
     const expiresAt = new Date(Date.now() + refreshTokenExpiry);
     await this.authRepo.createSession({
       id: sessionId,
@@ -98,6 +103,70 @@ export class AuthService {
     return {
       user: toUserResponse(user),
       ...authSession,
+    };
+  }
+
+  async logout(data: LogoutServiceDTO): Promise<void> {
+    if (!data.refreshToken) return;
+
+    let payload;
+    try {
+      payload = JwtService.verifyRefreshToken(data.refreshToken);
+    } catch {
+      return;
+    }
+    await this.authRepo.revokeSession(payload.sessionId);
+  }
+  async refreshToken(
+    data: RefreshTokenServiceDTO,
+  ): Promise<RefreshTokenResponse> {
+    const { refreshToken } = data;
+    const jwtPayload = JwtService.verifyRefreshToken(refreshToken);
+    const session = await this.authRepo.findActiveSessionById(
+      jwtPayload.sessionId,
+    );
+
+    if (!session) {
+      throw new AppError("Session not found", 404);
+    }
+    if (session.expiresAt.getTime() < Date.now()) {
+      throw new AppError("Session has expired", 401);
+    }
+
+    const isRefreshTokenValid = TokenService.verifyRefreshToken(
+      refreshToken,
+      session.refreshTokenHash,
+    );
+
+    if (!isRefreshTokenValid) {
+      throw new AppError("Invalid refresh token", 401);
+    }
+
+    const accessToken = JwtService.signAccessToken({
+      userId: jwtPayload.userId,
+      sessionId: jwtPayload.sessionId,
+    });
+
+    const newRefreshToken = JwtService.signRefreshToken({
+      userId: jwtPayload.userId,
+      sessionId: jwtPayload.sessionId,
+    });
+
+    const refreshTokenHash = TokenService.hashRefreshToken(newRefreshToken);
+
+    const expiry = ms(env.JWT_REFRESH_TOKEN_EXPIRY);
+
+    if (typeof expiry !== "number") {
+      throw new AppError("Invalid refresh expiry configuration", 500);
+    }
+    await this.authRepo.rotateSessionRefreshToken({
+      refreshTokenHash,
+      expiresAt: new Date(Date.now() + expiry),
+      sessionId: jwtPayload.sessionId,
+    });
+    return {
+      accessToken,
+      refreshToken: newRefreshToken,
     };
   }
 }

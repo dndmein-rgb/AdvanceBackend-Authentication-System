@@ -13,5 +13,10 @@ export class PasswordService {
   static verify(password: string, hashedPassword: string): Promise<boolean> {
     return argon2.verify(hashedPassword, password);
   }
-  
+  static hashRefreshToken(refreshToken: string): Promise<string>{
+    return argon2.hash(refreshToken)
+  }
+  static verifyRefreshToken(refreshToken: string, hash: string): Promise<boolean>{
+    return argon2.verify(hash,refreshToken)
+  }
 }
