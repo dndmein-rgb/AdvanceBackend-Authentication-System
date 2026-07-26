@@ -2,7 +2,11 @@ import { asyncHandler } from "@/common/middleware/async-handler";
 import type { Request, Response } from "express";
 import { authService } from "./auth.container";
 import { sendResponse } from "@/common/utils/send-response";
-import { clearRefreshTokenCookie, setRefreshTokenCookie } from "@/common/utils/cookie";
+import {
+  clearRefreshTokenCookie,
+  setRefreshTokenCookie,
+} from "@/common/utils/cookie";
+import { AppError } from "@/common/errors/app-error";
 
 export const registerUserController = asyncHandler(
   async (req: Request, res: Response) => {
@@ -61,6 +65,9 @@ export const logoutUserController = asyncHandler(
   async (req: Request, res: Response) => {
     const refreshToken = req.cookies.refreshToken;
 
+    if (!refreshToken) {
+      throw new AppError("Refresh token is missing", 401);
+    }
     await authService.logout({
       refreshToken,
     });
@@ -71,6 +78,31 @@ export const logoutUserController = asyncHandler(
       success: true,
       message: "Logged out successfully",
       data: null,
+    });
+  },
+);
+
+export const getCurrentUserController = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  const response = await authService.getCurrentUser({
+    userId: req.user!.userId,
+  });
+
+  sendResponse(res, 200, {
+    success: true,
+    message: "Current user fetched successfully",
+    data: response,
+  });
+};
+export const logoutAllSessionsController = asyncHandler(
+  async (req: Request, res: Response) => {
+    await authService.logoutAllSessions(req.user!.userId);
+    clearRefreshTokenCookie(res);
+    sendResponse(res, 200, {
+      success: true,
+      message: "Logged out from all devices successfully",
     });
   },
 );

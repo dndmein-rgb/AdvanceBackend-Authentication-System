@@ -2,6 +2,7 @@ import { Session, User } from "@/generated/prisma/client";
 import {
   CreateSessionDTO,
   CreateUserDTO,
+  CurrentUserDTO,
   RotateSessionDTO,
 } from "./auth.types";
 
@@ -19,4 +20,6 @@ export interface IAuthRepository {
   revokeSession(sessionId: string): Promise<Session>;
 
   revokeAllSessions(userId: string): Promise<number>;
+
+  findUserById(userId: string): Promise<CurrentUserDTO | null>;
 }

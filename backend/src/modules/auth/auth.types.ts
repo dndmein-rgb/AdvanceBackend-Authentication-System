@@ -39,6 +39,16 @@ export interface RotateSessionDTO {
   readonly expiresAt: Date;
 }
 
-export interface LogoutServiceDTO{
-  readonly refreshToken?:string
+export interface LogoutServiceDTO {
+  readonly refreshToken?: string;
+}
+
+export interface GetCurrentUserDTO {
+  userId: string;
+}
+
+export interface CurrentUserDTO {
+  readonly id: string;
+  readonly email: string;
+  readonly createdAt: Date;
 }
