@@ -4,12 +4,14 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import { globalErrorHandler } from "@/common/middleware/error.middleware.js";
 import { AppError } from "@/common/errors/app-error.js";
+import { requestLogger } from "@/common/middleware/request-logger";
 
 export const app = express();
 
 // app.set("trust proxy",1)
 
 app.use(helmet());
+app.use(requestLogger)
 app.use(
   cors({
     origin: true,

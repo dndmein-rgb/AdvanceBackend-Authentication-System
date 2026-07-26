@@ -1,10 +1,11 @@
 import { AppError } from "@/common/errors/app-error";
 import { PasswordService } from "@/common/services/password.service";
 
-import { toUserResponse } from "./auth.mapper";
+import { toCurrentUserResponse, toUserResponse } from "./auth.mapper";
 
 import type { IAuthRepository } from "./auth.interface";
 import type {
+  GetCurrentUserDTO,
   LoginUserServiceDTO,
   LogoutServiceDTO,
   RefreshTokenServiceDTO,
@@ -15,10 +16,15 @@ import { JwtService } from "@/common/services/jwt.services";
 import { TokenService } from "@/common/services/token.service";
 import { env } from "@/config/env";
 import ms from "ms";
-import { AuthRespone, AuthTokens, RefreshTokenResponse } from "./auth.response";
+import {
+  AuthRespone,
+  AuthTokens,
+  CurrentUserResponse,
+  RefreshTokenResponse,
+} from "./auth.response";
 
 export class AuthService {
-  constructor(private readonly authRepo: IAuthRepository) {}
+  constructor(private readonly authRepo: IAuthRepository) { }
 
   async createdAuthenticatedSession(
     userId: string,
@@ -168,5 +174,17 @@ export class AuthService {
       accessToken,
       refreshToken: newRefreshToken,
     };
+  }
+  async getCurrentUser(data: GetCurrentUserDTO): Promise<CurrentUserResponse> {
+    const user = await this.authRepo.findUserById(data.userId);
+    if (!user) {
+      throw new AppError("User not found", 404);
+    }
+    return toCurrentUserResponse(user);
+  }
+  async logoutAllSessions(userId: string): Promise<void> {
+    await this.authRepo.revokeAllSessions(userId)
+    
+    
   }
 }

@@ -4,6 +4,7 @@ import { prisma } from "@/infrastructure/database";
 import {
   CreateSessionDTO,
   CreateUserDTO,
+  CurrentUserDTO,
   RotateSessionDTO,
 } from "./auth.types";
 
@@ -53,5 +54,15 @@ export class AuthRepository implements IAuthRepository {
       },
     });
     return result.count;
+  }
+  async findUserById(userId: string): Promise<CurrentUserDTO | null> {
+    return await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        createdAt: true,
+      },
+    });
   }
 }

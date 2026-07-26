@@ -17,4 +17,10 @@ export interface AuthTokens {
 export interface AuthRespone extends AuthTokens {
   readonly user: UserResponse;
 }
-export interface RefreshTokenResponse extends AuthTokens {}
+export interface RefreshTokenResponse extends AuthTokens { }
+
+export interface CurrentUserResponse {
+  id: string;
+  email: string;
+  createdAt: Date;
+}
