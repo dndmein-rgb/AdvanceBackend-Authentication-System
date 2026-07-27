@@ -30,8 +30,10 @@ app.get("/health-check", (_, res: Response) => {
 });
 
 import authRouter from "@/modules/auth/auth.route"
+import adminRouter from "@/modules/admin/admin.route"
 
 app.use("/api/v1/auth",authRouter)
+app.use("/api/v1/admin",adminRouter)
 
 app.use((req: Request, _res: Response, next: NextFunction) => {
   next(
