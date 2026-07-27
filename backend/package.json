@@ -8,8 +8,13 @@
     "build": "tsc && tsc-alias",
     "start": "node dist/server.js",
     "db:generate": "npx prisma generate",
-    "db:migrate": "npx prisma migrate dev --name init"
+    "db:migrate": "npx prisma migrate dev --name init",
+    "db:seed": "prisma db seed"
   },
+    "db": {
+       "seed": "tsx --tsconfig tsconfig.seed.json prisma/seed.ts"
+     },
+  
   "keywords": [],
   "author": "",
   "license": "ISC",
