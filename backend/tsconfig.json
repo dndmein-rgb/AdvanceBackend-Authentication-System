@@ -9,7 +9,7 @@
 
     "outDir": "./dist",
 
-    "rootDir": "./src",
+    "rootDir": ".",
 
     "baseUrl": ".",
     "paths": {
@@ -33,5 +33,5 @@
     "exactOptionalPropertyTypes": true,
   },
 
-  "include": ["src"],
+  "include": ["src","prisma"],
 }
