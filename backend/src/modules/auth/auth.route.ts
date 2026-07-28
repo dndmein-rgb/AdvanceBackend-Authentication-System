@@ -1,6 +1,7 @@
 import express from "express";
 import {
   getCurrentUserController,
+  getUserPermissionsController,
   loginUserController,
   logoutAllSessionsController,
   logoutUserController,
@@ -18,7 +19,11 @@ router
   .post(validate(registerUserSchema), registerUserController);
 router.route("/login").post(validate(loginUserSchema), loginUserController);
 router.route("/logout").post(logoutUserController);
-router.route("/logout-all").post(authenticate,logoutAllSessionsController)
+router.route("/logout-all").post(authenticate, logoutAllSessionsController);
 router.route("/refresh").post(refreshTokenController);
 router.route("/me").get(authenticate, getCurrentUserController);
+
+router
+  .route("/me/permissions")
+  .get(authenticate, getUserPermissionsController);
 export default router;

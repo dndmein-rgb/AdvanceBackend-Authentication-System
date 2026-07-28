@@ -17,14 +17,15 @@ import { TokenService } from "@/common/services/token.service";
 import { env } from "@/config/env";
 import ms from "ms";
 import {
-  AuthRespone,
+  AuthResponse,
   AuthTokens,
   CurrentUserResponse,
   RefreshTokenResponse,
 } from "./auth.response";
+import { Permission } from "@/common/constants/permissions";
 
 export class AuthService {
-  constructor(private readonly authRepo: IAuthRepository) { }
+  constructor(private readonly authRepo: IAuthRepository) {}
 
   async createdAuthenticatedSession(
     userId: string,
@@ -58,7 +59,7 @@ export class AuthService {
       refreshToken,
     };
   }
-  async register(data: RegisterUserServiceDTO): Promise<AuthRespone> {
+  async register(data: RegisterUserServiceDTO): Promise<AuthResponse> {
     const existingUser = await this.authRepo.findUserByEmail(data.email);
 
     if (existingUser) {
@@ -81,7 +82,7 @@ export class AuthService {
     };
   }
 
-  async login(data: LoginUserServiceDTO): Promise<AuthRespone> {
+  async login(data: LoginUserServiceDTO): Promise<AuthResponse> {
     const user = await this.authRepo.findUserByEmail(data.email);
 
     if (!user) {
@@ -183,8 +184,20 @@ export class AuthService {
     return toCurrentUserResponse(user);
   }
   async logoutAllSessions(userId: string): Promise<void> {
-    await this.authRepo.revokeAllSessions(userId)
+    await this.authRepo.revokeAllSessions(userId);
+  }
+
+  async getUserPermissions(userId: string): Promise<Permission[]> {
     
-    
+
+    const userRoles = await this.authRepo.getUserPermissions(userId);
+
+    const permissions = userRoles.flatMap((userRole) =>
+      userRole.role.rolePermissions.map(
+        (rolePermission) => rolePermission.permission.name as Permission,
+      ),
+    );
+
+    return [...new Set(permissions)];
   }
 }

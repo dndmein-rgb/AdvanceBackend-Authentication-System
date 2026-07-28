@@ -1,39 +1,93 @@
-import { Permission } from "@/common/constants/permissions";
 import { IAdminRepository } from "./admin.interface";
 import { prisma } from "@/infrastructure/database";
-import { User } from "@/generated/prisma/client";
+import {  AdminUserType, GetAllRolesType, GetAllUsersType, GetRoleByIdType } from "./admin.types";
 
 export class AdminRepository implements IAdminRepository {
-  async getUserPermissions(userId: string): Promise<Permission[]> {
-    const userRoles = await prisma.userRole.findMany({
-      where: {
-        userId,
-      },
+  
+  async getAllUsers(): Promise<GetAllUsersType> {
+    return await prisma.user.findMany({
+      orderBy: { createdAt: "desc" },
       select: {
-        role: {
+        id: true,
+        email: true,
+        authProvider: true,
+        isEmailVerified: true,
+        createdAt: true,
+      },
+    });
+  }
+
+  async findUserById(userId: string): Promise<AdminUserType | null> {
+    return await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        authProvider: true,
+        isEmailVerified: true,
+        createdAt: true,
+      },
+    });
+  }
+  async getAllRoles(): Promise<GetAllRolesType> {
+    return await prisma.role.findMany({
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        name: true,
+        createdAt: true,
+
+        userRoles: {
           select: {
-            rolePermissions: {
+            userId: true,
+          },
+        },
+
+        rolePermissions: {
+          select: {
+            permission: {
               select: {
-                permission: {
-                  select: {
-                    name: true,
-                  },
-                },
+                id: true,
+                name: true,
               },
             },
           },
         },
       },
     });
-    const permissions = userRoles.flatMap((userRole) =>
-      userRole.role.rolePermissions.map(
-        (rolePermission) => rolePermission.permission.name as Permission,
-      ),
-    );
-
-    return [...new Set(permissions)];
   }
-  async getAllUsers(): Promise<User[]> {
-    return await prisma.user.findMany()
+  async getRoleById(roleId: string): Promise<GetRoleByIdType | null> {
+    return await prisma.role.findUnique({
+      where: { id: roleId },
+      select: {
+        id: true,
+        name: true,
+        createdAt: true,
+
+        rolePermissions: {
+          select: {
+            assignedAt: true,
+            permission: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
+        userRoles: {
+          select: {
+            assignedAt: true,
+            user: {
+              select: {
+                id: true,
+                email: true,
+                createdAt: true,
+              },
+            },
+          },
+        },
+      },
+    });
   }
 }
