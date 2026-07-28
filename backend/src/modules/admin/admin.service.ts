@@ -1,19 +1,33 @@
 import { AppError } from "@/common/errors/app-error";
 import { IAdminRepository } from "./admin.interface";
-import { AuthServiceDTO } from "./admin.types";
-import { User } from "@/generated/prisma/client";
+import {
+  AdminUserDTO,
+  GetAllRolesType,
+  GetRoleByIdType,
+} from "./admin.types";
 
-export class AdminService{
-  constructor(private readonly adminRepo: IAdminRepository) { }
+export class AdminService {
+  constructor(private readonly adminRepo: IAdminRepository) {}
 
-  async authorize(data: AuthServiceDTO):Promise<void> {
-    const permissions = await this.adminRepo.getUserPermissions(data.userId)
-    if (!permissions.includes(data.permission)) {
-      throw new AppError("Forbidden",403)
-    }
-  }
-  async getAllUsers(): Promise<User[]>{
-    const users = await this.adminRepo.getAllUsers()
+  async getAllUsers(): Promise<AdminUserDTO[]> {
+    const users = await this.adminRepo.getAllUsers();
     return users;
+  }
+  async getUserById(userId: string): Promise<AdminUserDTO> {
+    const user = await this.adminRepo.findUserById(userId);
+    if (!user) {
+      throw new AppError("User not found", 404);
+    }
+    return user;
+  }
+
+  async getAllRoles(): Promise<GetAllRolesType> {
+    return await this.adminRepo.getAllRoles();
+  }
+
+  async getRoleById(roleId: string): Promise<GetRoleByIdType> {
+    const role = await this.adminRepo.getRoleById(roleId);
+    if (!role) throw new AppError("Role not found", 404);
+    return role;
   }
 }

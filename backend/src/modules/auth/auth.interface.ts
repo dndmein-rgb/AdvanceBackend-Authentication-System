@@ -4,6 +4,7 @@ import {
   CreateUserDTO,
   CurrentUserDTO,
   RotateSessionDTO,
+  UserRoleWithPermissionsType,
 } from "./auth.types";
 
 export interface IAuthRepository {
@@ -22,4 +23,8 @@ export interface IAuthRepository {
   revokeAllSessions(userId: string): Promise<number>;
 
   findUserById(userId: string): Promise<CurrentUserDTO | null>;
+
+  getUserPermissions(
+     userId: string,
+   ): Promise<UserRoleWithPermissionsType[]>;
 }

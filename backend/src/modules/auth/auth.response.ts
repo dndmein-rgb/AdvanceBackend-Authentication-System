@@ -14,7 +14,7 @@ export interface AuthTokens {
   readonly refreshToken: string;
 }
 
-export interface AuthRespone extends AuthTokens {
+export interface AuthResponse extends AuthTokens {
   readonly user: UserResponse;
 }
 export interface RefreshTokenResponse extends AuthTokens { }

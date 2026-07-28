@@ -52,3 +52,32 @@ export interface CurrentUserDTO {
   readonly email: string;
   readonly createdAt: Date;
 }
+
+
+import { Prisma } from "@/generated/prisma/client";
+
+export type UserRoleWithPermissionsType = Prisma.UserRoleGetPayload<{
+  select: {
+    role: {
+      select: {
+        name: true;
+
+        rolePermissions: {
+          select: {
+            permission: {
+              select: {
+                name: true;
+              };
+            };
+          };
+        };
+      };
+    };
+  };
+}>;
+
+export interface CurrentUserType {
+  id:string;
+  email:string;
+  createdAt:Date;
+}

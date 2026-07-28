@@ -4,8 +4,9 @@ import { prisma } from "@/infrastructure/database";
 import {
   CreateSessionDTO,
   CreateUserDTO,
-  CurrentUserDTO,
+  CurrentUserType,
   RotateSessionDTO,
+  UserRoleWithPermissionsType,
 } from "./auth.types";
 
 export class AuthRepository implements IAuthRepository {
@@ -55,13 +56,39 @@ export class AuthRepository implements IAuthRepository {
     });
     return result.count;
   }
-  async findUserById(userId: string): Promise<CurrentUserDTO | null> {
+  async findUserById(userId: string): Promise<CurrentUserType | null> {
     return await prisma.user.findUnique({
       where: { id: userId },
       select: {
         id: true,
         email: true,
         createdAt: true,
+      },
+    });
+  }
+  async getUserPermissions(
+    userId: string,
+  ): Promise<UserRoleWithPermissionsType[]> {
+    return prisma.userRole.findMany({
+      where: {
+        userId,
+      },
+      select: {
+        role: {
+          select: {
+            name: true,
+  
+            rolePermissions: {
+              select: {
+                permission: {
+                  select: {
+                    name: true,
+                  },
+                },
+              },
+            },
+          },
+        },
       },
     });
   }
