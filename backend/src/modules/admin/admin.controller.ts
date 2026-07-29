@@ -85,24 +85,60 @@ export const deleteRoleController = asyncHandler(
   },
 );
 
-export const assignPermissionsController =
-asyncHandler(
- async(
-  req:Request,
-  res:Response,
- )=>{
+export const assignPermissionsController = asyncHandler(
+  async (req: Request, res: Response) => {
+    await adminService.assignPermissionsToRole(
+      req.params.roleId as string,
+      req.body,
+    );
 
-  await adminService.assignPermissionsToRole(
-    req.params.roleId as string,
-    req.body,
-  );
+    sendResponse(res, 200, {
+      success: true,
+      message: "Permissions assigned successfully",
+      data: null,
+    });
+  },
+);
+
+export const assignRoleToUserController = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { userId } = req.params;
+
+    await adminService.assignRoleToUser(userId as string,  req.body);
+
+    sendResponse(res, 200, {
+      success: true,
+      message: "Role assigned successfully",
+      data: null,
+    });
+  },
+);
+
+export const removeRoleFromUserController = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { userId } = req.params;
 
 
-  sendResponse(res,200,{
-    success:true,
-    message:"Permissions assigned successfully",
-    data:null,
-  });
+    await adminService.removeRoleFromUser(userId as string, req.body);
 
- }
+    sendResponse(res, 200, {
+      success: true,
+      message: "Role removed successfully",
+      data: null,
+    });
+  },
+);
+export const replaceRolePermissionsController = asyncHandler(
+  async (req, res) => {
+    await adminService.replaceRolePermissions(
+      req.params.roleId as string,
+      req.body,
+    );
+
+    sendResponse(res, 200, {
+      success: true,
+      message: "Role permissions updated successfully",
+      data: null,
+    });
+  },
 );

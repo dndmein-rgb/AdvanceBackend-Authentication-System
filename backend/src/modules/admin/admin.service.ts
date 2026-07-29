@@ -1,11 +1,13 @@
 import { AppError } from "@/common/errors/app-error";
 import { IAdminRepository } from "./admin.interface";
 import { AdminUserDTO, GetAllRolesType, GetRoleByIdType } from "./admin.types";
-import { Role } from "@/generated/prisma/client";
+import { Prisma, Role } from "@/generated/prisma/client";
 import { toRoleResponse } from "./admin.mapper";
 import {
   AssignPermissionsDTO,
+  AssignRoleSchemaDTO,
   CreateRoleDTO,
+  RemoveRoleSchemaDTO,
   UpdateRoleDTO,
 } from "./admin.schema";
 
@@ -85,5 +87,82 @@ export class AdminService {
       permissions.map((permission) => permission.id),
     );
   }
-  
+
+  async assignRoleToUser(
+    userId: string,
+    data: AssignRoleSchemaDTO,
+  ): Promise<void> {
+    const user = await this.adminRepo.findUserById(userId);
+    if (!user) {
+      throw new AppError("User not found", 404);
+    }
+    const role = await this.adminRepo.getRoleById(data.roleId);
+    if (!role) {
+      throw new AppError("Role not found", 404);
+    }
+    try {
+      await this.adminRepo.assignRoleToUser(userId, data.roleId);
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === "P2002"
+      ) {
+        throw new AppError("Role already assigned to user", 409);
+      }
+
+      throw error;
+    }
+  }
+  async removeRoleFromUser(
+    userId: string,
+    data: RemoveRoleSchemaDTO,
+  ): Promise<void> {
+    const user = await this.adminRepo.findUserById(userId);
+
+    if (!user) {
+      throw new AppError("User not found", 404);
+    }
+
+    const role = await this.adminRepo.getRoleById(data.roleId);
+
+    if (!role) {
+      throw new AppError("Role not found", 404);
+    }
+
+    try {
+      await this.adminRepo.removeRoleFromUser(userId, data.roleId);
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === "P2025"
+      ) {
+        throw new AppError("Role is not assigned to user", 404);
+      }
+
+      throw error;
+    }
+  }
+  async replaceRolePermissions(
+    roleId: string,
+    data: AssignPermissionsDTO,
+  ): Promise<void> {
+    const role = await this.adminRepo.getRoleById(roleId);
+
+    if (!role) {
+      throw new AppError("Role not found", 404);
+    }
+
+    const permissions = await this.adminRepo.findPermissionsByNames(
+      data.permissions,
+    );
+
+    if (permissions.length !== data.permissions.length) {
+      throw new AppError("One or more permissions are invalid", 400);
+    }
+
+    await this.adminRepo.replaceRolePermissions(
+      roleId,
+      permissions.map((permission) => permission.id),
+    );
+  }
 }

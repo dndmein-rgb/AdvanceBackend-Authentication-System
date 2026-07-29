@@ -8,11 +8,10 @@ import {
   GetRoleByIdType,
   UpdateRoleData,
 } from "./admin.types";
-import { Role } from "@/generated/prisma/client";
+import { Role, UserRole } from "@/generated/prisma/client";
 import { adminUserSelect } from "./admin.select";
 import { Permission as PermissionModel } from "@/generated/prisma/client";
 import { Permission } from "@/common/constants/permissions";
-
 
 export class AdminRepository implements IAdminRepository {
   async getAllUsers(): Promise<GetAllUsersType> {
@@ -56,7 +55,7 @@ export class AdminRepository implements IAdminRepository {
     });
   }
   async getRoleById(roleId: string): Promise<GetRoleByIdType | null> {
-    return prisma.role.findUnique({
+    return  prisma.role.findUnique({
       where: { id: roleId },
       select: {
         id: true,
@@ -115,14 +114,17 @@ export class AdminRepository implements IAdminRepository {
     });
   }
 
-  async assignPermissionsToRole(roleId: string, permissionIds: string[]): Promise<void> {
-     await prisma.rolePermission.createMany({
-      data:permissionIds.map((permissionId) => ({
+  async assignPermissionsToRole(
+    roleId: string,
+    permissionIds: string[],
+  ): Promise<void> {
+    await prisma.rolePermission.createMany({
+      data: permissionIds.map((permissionId) => ({
         roleId,
-        permissionId
+        permissionId,
       })),
-      skipDuplicates:true
-    })
+      skipDuplicates: true,
+    });
   }
   async findPermissionsByNames(
     names: Permission[],
@@ -133,6 +135,40 @@ export class AdminRepository implements IAdminRepository {
           in: names,
         },
       },
+    });
+  }
+  async assignRoleToUser(userId: string, roleId: string): Promise<UserRole> {
+    return await prisma.userRole.create({
+      data: {
+        userId,
+        roleId,
+      },
+    });
+  }
+  async removeRoleFromUser(userId: string, roleId: string): Promise<void> {
+    await prisma.userRole.delete({
+      where: {
+        userId_roleId: {
+          userId,
+          roleId,
+        },
+      },
+    });
+  }
+  async replaceRolePermissions(
+    roleId: string,
+    permissionIds: string[],
+  ): Promise<void> {
+    await prisma.$transaction(async (tx) => {
+      await tx.rolePermission.deleteMany({
+        where: { roleId },
+      });
+      await tx.rolePermission.createMany({
+        data: permissionIds.map((permissionId) => ({
+          roleId,
+          permissionId,
+        })),
+      });
     });
   }
 }

@@ -1,4 +1,4 @@
-import { Role } from "@/generated/prisma/client";
+import { Role, UserRole } from "@/generated/prisma/client";
 import { Permission as PermissionModel } from "@/generated/prisma/client";
 import {
   AdminUserType,
@@ -27,6 +27,15 @@ export interface IAdminRepository {
     roleId: string,
     permissionIds: string[],
   ): Promise<void>;
-  
+
+  replaceRolePermissions(
+    roleId: string,
+    permissionIds: string[],
+  ): Promise<void>;
+
   findPermissionsByNames(names: Permission[]): Promise<PermissionModel[]>;
+
+  assignRoleToUser(userId: string, roleId: string): Promise<UserRole>;
+
+  removeRoleFromUser(userId: string, roleId: string): Promise<void>;
 }
