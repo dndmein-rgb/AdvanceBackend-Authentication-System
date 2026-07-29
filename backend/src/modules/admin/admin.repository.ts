@@ -10,6 +10,9 @@ import {
 } from "./admin.types";
 import { Role } from "@/generated/prisma/client";
 import { adminUserSelect } from "./admin.select";
+import { Permission as PermissionModel } from "@/generated/prisma/client";
+import { Permission } from "@/common/constants/permissions";
+
 
 export class AdminRepository implements IAdminRepository {
   async getAllUsers(): Promise<GetAllUsersType> {
@@ -109,6 +112,27 @@ export class AdminRepository implements IAdminRepository {
   async findRoleByName(name: string): Promise<Role | null> {
     return prisma.role.findUnique({
       where: { name },
+    });
+  }
+
+  async assignPermissionsToRole(roleId: string, permissionIds: string[]): Promise<void> {
+     await prisma.rolePermission.createMany({
+      data:permissionIds.map((permissionId) => ({
+        roleId,
+        permissionId
+      })),
+      skipDuplicates:true
+    })
+  }
+  async findPermissionsByNames(
+    names: Permission[],
+  ): Promise<PermissionModel[]> {
+    return await prisma.permission.findMany({
+      where: {
+        name: {
+          in: names,
+        },
+      },
     });
   }
 }

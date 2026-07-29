@@ -84,3 +84,25 @@ export const deleteRoleController = asyncHandler(
     });
   },
 );
+
+export const assignPermissionsController =
+asyncHandler(
+ async(
+  req:Request,
+  res:Response,
+ )=>{
+
+  await adminService.assignPermissionsToRole(
+    req.params.roleId as string,
+    req.body,
+  );
+
+
+  sendResponse(res,200,{
+    success:true,
+    message:"Permissions assigned successfully",
+    data:null,
+  });
+
+ }
+);

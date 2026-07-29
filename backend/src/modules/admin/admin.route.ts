@@ -1,5 +1,6 @@
 import express from "express";
 import {
+  assignPermissionsController,
   createRoleController,
   deleteRoleController,
   getAllRolesController,
@@ -12,7 +13,7 @@ import { authorizePermissions } from "@/common/middleware/authorization.middlewa
 import { PERMISSIONS } from "@/common/constants/permissions";
 import { authenticate } from "@/common/middleware/auth.middleware";
 import { validate } from "@/common/middleware/validate.middleware";
-import { createRoleSchema, getRoleByIdSchema, roleIdSchema, updateRoleSchema } from "./admin.schema";
+import { assignPermissionsSchema, createRoleSchema, getRoleByIdSchema, roleIdSchema, updateRoleSchema } from "./admin.schema";
 
 const router = express.Router();
 
@@ -72,4 +73,11 @@ router.delete(
   deleteRoleController,
 );
 
+router.post(
+  "/roles/:roleId/permissions",
+  authenticate,
+  authorizePermissions(PERMISSIONS.MANAGE_ROLES),
+  validate(assignPermissionsSchema),
+  assignPermissionsController,
+);
 export default router;

@@ -1,7 +1,5 @@
 import { Permission } from "@/common/constants/permissions";
 import { AuthProvider, Prisma, Role } from "@/generated/prisma/client";
-import z from "zod";
-import { createRoleSchema, updateRoleSchema } from "./admin.schema";
 
 export interface AuthServiceDTO {
   userId: string;
@@ -79,7 +77,7 @@ export type GetRoleByIdType = Prisma.RoleGetPayload<{
 
     userRoles: {
       select: {
-        assignedAt:true,
+        assignedAt: true;
         user: {
           select: {
             id: true;
@@ -100,7 +98,8 @@ export interface UpdateRoleData {
   name: string;
 }
 
-export type CreateRoleDTO=z.infer<typeof createRoleSchema>
-export type UpdateRoleDTO=z.infer<typeof updateRoleSchema>
-
 export type RoleResponseDTO = Pick<Role, "id" | "name" | "createdAt">;
+
+export interface AssignPermissionsData {
+  permissions: Permission[];
+}
