@@ -16,9 +16,7 @@ export const getAllUsersController = asyncHandler(
 
 export const getUserByIdController = asyncHandler(
   async (req: Request, res: Response) => {
-    const result = await adminService.getUserById(
-       req.params.userId as string,
-    );
+    const result = await adminService.getUserById(req.params.userId as string);
 
     sendResponse(res, 200, {
       success: true,
@@ -29,8 +27,7 @@ export const getUserByIdController = asyncHandler(
 );
 export const getAllRolesController = asyncHandler(
   async (_req: Request, res: Response) => {
-    const result = await adminService.getAllRoles()
-       
+    const result = await adminService.getAllRoles();
 
     sendResponse(res, 200, {
       success: true,
@@ -47,6 +44,43 @@ export const getRoleByIdController = asyncHandler(
       success: true,
       message: "Role fetched successfully",
       data: result,
+    });
+  },
+);
+
+export const createRoleController = asyncHandler(
+  async (req: Request, res: Response) => {
+    const result = await adminService.createRole(req.body);
+
+    sendResponse(res, 201, {
+      success: true,
+      message: "Role created successfully",
+      data: result,
+    });
+  },
+);
+export const updateRoleController = asyncHandler(
+  async (req: Request, res: Response) => {
+    const result = await adminService.updateRole(
+      req.params.roleId as string,
+      req.body,
+    );
+
+    sendResponse(res, 200, {
+      success: true,
+      message: "Role updated successfully",
+      data: result,
+    });
+  },
+);
+export const deleteRoleController = asyncHandler(
+  async (req: Request, res: Response) => {
+    await adminService.deleteRole(req.params.roleId as string);
+
+    sendResponse(res, 200, {
+      success: true,
+      message: "Role deleted successfully",
+      data: null,
     });
   },
 );
