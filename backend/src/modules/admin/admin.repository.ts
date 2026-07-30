@@ -3,8 +3,8 @@ import { prisma } from "@/infrastructure/database";
 import {
   AdminUserType,
   CreateRoleData,
+  CursorPaginationResult,
   GetAllRolesType,
-  GetAllUsersType,
   GetRoleByIdType,
   UpdateRoleData,
 } from "./admin.types";
@@ -14,13 +14,46 @@ import { Permission as PermissionModel } from "@/generated/prisma/client";
 import { Permission } from "@/common/constants/permissions";
 
 export class AdminRepository implements IAdminRepository {
-  async getAllUsers(): Promise<GetAllUsersType> {
-    return prisma.user.findMany({
-      orderBy: { createdAt: "desc" },
+  async getAllUsers(
+    cursor?: string,
+    limit = 10,
+  ): Promise<CursorPaginationResult<AdminUserType>> {
+    const users = await prisma.user.findMany({
+      take: limit + 1,
+
+      ...(cursor && {
+        cursor: {
+          id: cursor,
+        },
+        skip: 1,
+      }),
+
+      skip: cursor ? 1 : 0,
+
+      orderBy: [
+        {
+          createdAt: "desc",
+        },
+        {
+          id: "desc",
+        },
+      ],
+
       select: adminUserSelect,
     });
-  }
 
+    const hasMore = users.length > limit;
+
+    if (hasMore) {
+      users.pop();
+    }
+
+    return {
+      data: users,
+      hasMore,
+      nextCursor: hasMore ? users[users.length - 1].id : null,
+    };
+  }
   async findUserById(userId: string): Promise<AdminUserType | null> {
     return prisma.user.findUnique({
       where: { id: userId },
@@ -55,7 +88,7 @@ export class AdminRepository implements IAdminRepository {
     });
   }
   async getRoleById(roleId: string): Promise<GetRoleByIdType | null> {
-    return  prisma.role.findUnique({
+    return prisma.role.findUnique({
       where: { id: roleId },
       select: {
         id: true,

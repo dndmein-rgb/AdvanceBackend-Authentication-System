@@ -48,5 +48,5 @@ export type CreateRoleDTO = z.infer<typeof createRoleSchema>;
 export type UpdateRoleDTO = z.infer<typeof updateRoleSchema>;
 export type AssignPermissionsDTO = z.infer<typeof assignPermissionsSchema>;
 
-export type AssignRoleSchemaDTO=z.infer<typeof assignRoleSchema>
-export type RemoveRoleSchemaDTO=z.infer<typeof removeRoleSchema>
+export type AssignRoleDTO=z.infer<typeof assignRoleSchema>
+export type RemoveRoleDTO=z.infer<typeof removeRoleSchema>

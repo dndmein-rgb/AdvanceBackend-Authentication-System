@@ -3,15 +3,15 @@ import { Permission as PermissionModel } from "@/generated/prisma/client";
 import {
   AdminUserType,
   CreateRoleData,
+  CursorPaginationResult,
   GetAllRolesType,
-  GetAllUsersType,
   GetRoleByIdType,
   UpdateRoleData,
 } from "./admin.types";
 import { Permission } from "@/common/constants/permissions";
 
 export interface IAdminRepository {
-  getAllUsers(): Promise<GetAllUsersType>;
+  getAllUsers(cursor?:string,limit?:number): Promise<CursorPaginationResult<AdminUserType>>;
 
   findUserById(userId: string): Promise<AdminUserType | null>;
 

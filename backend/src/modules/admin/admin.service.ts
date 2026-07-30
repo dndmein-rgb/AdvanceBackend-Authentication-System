@@ -1,42 +1,53 @@
 import { AppError } from "@/common/errors/app-error";
 import { IAdminRepository } from "./admin.interface";
-import { AdminUserDTO, GetAllRolesType, GetRoleByIdType } from "./admin.types";
-import { Prisma, Role } from "@/generated/prisma/client";
-import { toRoleResponse } from "./admin.mapper";
+import {
+  AdminUserDTO,
+  CursorPaginationResult,
+  GetAllRolesType,
+} from "./admin.types";
+import { Prisma } from "@/generated/prisma/client";
+import {
+  toRoleDetailsResponse,
+  toRoleResponse,
+  toUserResponse,
+} from "./admin.mapper";
 import {
   AssignPermissionsDTO,
-  AssignRoleSchemaDTO,
+  AssignRoleDTO,
   CreateRoleDTO,
-  RemoveRoleSchemaDTO,
+  RemoveRoleDTO,
   UpdateRoleDTO,
 } from "./admin.schema";
+import { RoleDetailsResponseDTO, RoleResponseDTO } from "./admin.response";
+import { PaginationDTO } from "@/common/schema/pagination.schema";
 
 export class AdminService {
   constructor(private readonly adminRepo: IAdminRepository) {}
 
-  async getAllUsers(): Promise<AdminUserDTO[]> {
-    const users = await this.adminRepo.getAllUsers();
-    return users;
+  async getAllUsers(
+    query: PaginationDTO,
+  ): Promise<CursorPaginationResult<AdminUserDTO>> {
+    return await this.adminRepo.getAllUsers(query.cursor, query.limit);
   }
   async getUserById(userId: string): Promise<AdminUserDTO> {
     const user = await this.adminRepo.findUserById(userId);
     if (!user) {
       throw new AppError("User not found", 404);
     }
-    return user;
+    return toUserResponse(user);
   }
 
   async getAllRoles(): Promise<GetAllRolesType> {
     return await this.adminRepo.getAllRoles();
   }
 
-  async getRoleById(roleId: string): Promise<GetRoleByIdType> {
+  async getRoleById(roleId: string): Promise<RoleDetailsResponseDTO> {
     const role = await this.adminRepo.getRoleById(roleId);
     if (!role) throw new AppError("Role not found", 404);
-    return role;
+    return toRoleDetailsResponse(role);
   }
 
-  async createRole(data: CreateRoleDTO): Promise<Role> {
+  async createRole(data: CreateRoleDTO): Promise<RoleResponseDTO> {
     const existingRole = await this.adminRepo.findRoleByName(data.name);
     if (existingRole) {
       throw new AppError("Role already exists", 409);
@@ -45,7 +56,10 @@ export class AdminService {
     return toRoleResponse(role);
   }
 
-  async updateRole(roleId: string, data: UpdateRoleDTO): Promise<Role> {
+  async updateRole(
+    roleId: string,
+    data: UpdateRoleDTO,
+  ): Promise<RoleResponseDTO> {
     const role = await this.adminRepo.getRoleById(roleId);
     if (!role) {
       throw new AppError("Role not found", 404);
@@ -67,31 +81,36 @@ export class AdminService {
 
     await this.adminRepo.deleteRole(roleId);
   }
+  private async getValidatedPermissionIds(
+    roleId: string,
+    data: AssignPermissionsDTO,
+  ): Promise<string[]> {
+    const role = await this.adminRepo.getRoleById(roleId);
+
+    if (!role) {
+      throw new AppError("Role not found", 404);
+    }
+
+    const permissions = await this.adminRepo.findPermissionsByNames(
+      data.permissions,
+    );
+
+    if (permissions.length !== data.permissions.length) {
+      throw new AppError("One or more permissions are invalid", 400);
+    }
+
+    return permissions.map((permission) => permission.id);
+  }
 
   async assignPermissionsToRole(
     roleId: string,
     data: AssignPermissionsDTO,
   ): Promise<void> {
-    const role = await this.adminRepo.getRoleById(roleId);
-    if (!role) {
-      throw new AppError("Role not found", 404);
-    }
-    const permissions = await this.adminRepo.findPermissionsByNames(
-      data.permissions,
-    );
-    if (permissions.length !== data.permissions.length) {
-      throw new AppError("One or more permissions are invalid", 400);
-    }
-    await this.adminRepo.assignPermissionsToRole(
-      roleId,
-      permissions.map((permission) => permission.id),
-    );
-  }
+    const permissionIds = await this.getValidatedPermissionIds(roleId, data);
 
-  async assignRoleToUser(
-    userId: string,
-    data: AssignRoleSchemaDTO,
-  ): Promise<void> {
+    await this.adminRepo.assignPermissionsToRole(roleId, permissionIds);
+  }
+  async assignRoleToUser(userId: string, data: AssignRoleDTO): Promise<void> {
     const user = await this.adminRepo.findUserById(userId);
     if (!user) {
       throw new AppError("User not found", 404);
@@ -113,10 +132,7 @@ export class AdminService {
       throw error;
     }
   }
-  async removeRoleFromUser(
-    userId: string,
-    data: RemoveRoleSchemaDTO,
-  ): Promise<void> {
+  async removeRoleFromUser(userId: string, data: RemoveRoleDTO): Promise<void> {
     const user = await this.adminRepo.findUserById(userId);
 
     if (!user) {
@@ -146,23 +162,7 @@ export class AdminService {
     roleId: string,
     data: AssignPermissionsDTO,
   ): Promise<void> {
-    const role = await this.adminRepo.getRoleById(roleId);
-
-    if (!role) {
-      throw new AppError("Role not found", 404);
-    }
-
-    const permissions = await this.adminRepo.findPermissionsByNames(
-      data.permissions,
-    );
-
-    if (permissions.length !== data.permissions.length) {
-      throw new AppError("One or more permissions are invalid", 400);
-    }
-
-    await this.adminRepo.replaceRolePermissions(
-      roleId,
-      permissions.map((permission) => permission.id),
-    );
+    const permissionIds = await this.getValidatedPermissionIds(roleId, data);
+    await this.adminRepo.replaceRolePermissions(roleId, permissionIds);
   }
 }

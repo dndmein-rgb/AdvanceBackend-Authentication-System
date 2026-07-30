@@ -2,10 +2,13 @@ import { asyncHandler } from "@/common/middleware/async-handler";
 import { Request, Response } from "express";
 import { adminService } from "./admin.container";
 import { sendResponse } from "@/common/utils/send-response";
+import { PaginationDTO } from "@/common/schema/pagination.schema";
 
 export const getAllUsersController = asyncHandler(
-  async (_req: Request, res: Response) => {
-    const result = await adminService.getAllUsers();
+  async (req: Request, res: Response) => {
+    const query = req.query as unknown as PaginationDTO;
+
+    const result = await adminService.getAllUsers(query)
     sendResponse(res, 200, {
       success: true,
       message: "All users fetched successfully",
@@ -104,7 +107,7 @@ export const assignRoleToUserController = asyncHandler(
   async (req: Request, res: Response) => {
     const { userId } = req.params;
 
-    await adminService.assignRoleToUser(userId as string,  req.body);
+    await adminService.assignRoleToUser(userId as string, req.body);
 
     sendResponse(res, 200, {
       success: true,
@@ -117,7 +120,6 @@ export const assignRoleToUserController = asyncHandler(
 export const removeRoleFromUserController = asyncHandler(
   async (req: Request, res: Response) => {
     const { userId } = req.params;
-
 
     await adminService.removeRoleFromUser(userId as string, req.body);
 

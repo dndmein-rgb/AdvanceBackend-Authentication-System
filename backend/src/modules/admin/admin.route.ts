@@ -16,7 +16,16 @@ import { authorizePermissions } from "@/common/middleware/authorization.middlewa
 import { PERMISSIONS } from "@/common/constants/permissions";
 import { authenticate } from "@/common/middleware/auth.middleware";
 import { validate } from "@/common/middleware/validate.middleware";
-import { assignPermissionsSchema, assignRoleSchema, createRoleSchema, removeRoleSchema, roleIdSchema, updateRoleSchema } from "./admin.schema";
+import {
+  assignPermissionsSchema,
+  assignRoleSchema,
+  createRoleSchema,
+  removeRoleSchema,
+  roleIdSchema,
+  updateRoleSchema,
+  userIdSchema,
+} from "./admin.schema";
+import { paginationSchema } from "@/common/schema/pagination.schema";
 
 const router = express.Router();
 
@@ -25,16 +34,16 @@ router
   .get(
     authenticate,
     authorizePermissions(PERMISSIONS.MANAGE_USERS),
+     validate(paginationSchema, "query"),
     getAllUsersController,
   );
-router
-  .route("/users/:userId")
-  .get(
-    authenticate,
-    authorizePermissions(PERMISSIONS.MANAGE_USERS),
-    
-    getUserByIdController,
-  );
+router.route("/users/:userId").get(
+  authenticate,
+  authorizePermissions(PERMISSIONS.MANAGE_USERS),
+  validate(userIdSchema, "params"),
+
+  getUserByIdController,
+);
 router.get(
   "/roles",
   authenticate,
@@ -45,7 +54,7 @@ router.get(
   "/roles/:roleId",
   authenticate,
   authorizePermissions(PERMISSIONS.MANAGE_ROLES),
-  validate(roleIdSchema,"params"),
+  validate(roleIdSchema, "params"),
   getRoleByIdController,
 );
 
@@ -70,8 +79,7 @@ router.delete(
   "/roles/:roleId",
   authenticate,
   authorizePermissions(PERMISSIONS.MANAGE_ROLES),
-  validate(roleIdSchema
-    , "params"),
+  validate(roleIdSchema, "params"),
   deleteRoleController,
 );
 
@@ -80,23 +88,27 @@ router.post(
   authenticate,
   authorizePermissions(PERMISSIONS.MANAGE_ROLES),
   validate(assignPermissionsSchema),
+  validate(roleIdSchema, "params"),
   assignPermissionsController,
 );
 
 router.post(
- "/users/:userId/roles",
- authenticate,
- authorizePermissions(PERMISSIONS.MANAGE_ROLES),
- validate(assignRoleSchema),
- assignRoleToUserController
+  "/users/:userId/roles",
+  authenticate,
+  authorizePermissions(PERMISSIONS.MANAGE_ROLES),
+  validate(assignRoleSchema),
+  validate(userIdSchema, "params"),
+  assignRoleToUserController,
 );
 
 router.delete(
- "/users/:userId/roles",
- authenticate,
- authorizePermissions(PERMISSIONS.MANAGE_ROLES),
- validate(removeRoleSchema),
- removeRoleFromUserController,
+  "/users/:userId/roles",
+  authenticate,
+  authorizePermissions(PERMISSIONS.MANAGE_ROLES),
+  validate(removeRoleSchema),
+  validate(userIdSchema, "params"),
+
+  removeRoleFromUserController,
 );
 
 router.put(

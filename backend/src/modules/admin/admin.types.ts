@@ -1,5 +1,5 @@
 import { Permission } from "@/common/constants/permissions";
-import { AuthProvider, Prisma, Role } from "@/generated/prisma/client";
+import { AuthProvider, Prisma } from "@/generated/prisma/client";
 
 export interface AuthServiceDTO {
   userId: string;
@@ -98,8 +98,14 @@ export interface UpdateRoleData {
   name: string;
 }
 
-export type RoleResponseDTO = Pick<Role, "id" | "name" | "createdAt">;
 
 export interface AssignPermissionsData {
   permissions: Permission[];
+}
+
+
+export interface CursorPaginationResult<T> {
+  data: T[];
+  nextCursor: string | null;
+  hasMore: boolean;
 }
