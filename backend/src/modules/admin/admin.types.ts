@@ -23,45 +23,15 @@ export type AdminUserType = Prisma.UserGetPayload<{
     createdAt: true;
   };
 }>;
-export type GetAllUsersType = Prisma.UserGetPayload<{
-  select: {
-    id: true;
-    email: true;
-    authProvider: true;
-    isEmailVerified: true;
-    createdAt: true;
-  };
-}>[];
 
-export type GetAllRolesType = Prisma.RoleGetPayload<{
-  select: {
-    id: true;
-    name: true;
-    createdAt: true;
 
-    userRoles: {
-      select: {
-        userId: true;
-      };
-    };
-    rolePermissions: {
-      select: {
-        permission: {
-          select: {
-            id: true;
-            name: true;
-          };
-        };
-      };
-    };
-  };
-}>[];
 
 export type GetRoleByIdType = Prisma.RoleGetPayload<{
   select: {
     id: true;
     name: true;
     createdAt: true;
+    isSystem: true;
 
     rolePermissions: {
       select: {
@@ -95,17 +65,43 @@ export interface CreateRoleData {
 }
 
 export interface UpdateRoleData {
-  name: string;
+  name?: string;
 }
-
 
 export interface AssignPermissionsData {
   permissions: Permission[];
 }
 
-
 export interface CursorPaginationResult<T> {
   data: T[];
-  nextCursor: string | null;
-  hasMore: boolean;
+  pagination: {
+    nextCursor: string | null;
+    hasMore: boolean;
+    limit: number;
+  };
 }
+
+export type UserRoleWithRoleType = Prisma.UserRoleGetPayload<{
+  include: {
+    role: true;
+  };
+}>;
+
+export type RoleListType = Prisma.RoleGetPayload<{
+  select: {
+    id: true;
+    name: true;
+    createdAt: true;
+    isSystem: true;
+
+    _count: {
+      select: {
+        userRoles: true;
+        rolePermissions: true;
+      };
+    };
+  };
+}>;
+
+
+

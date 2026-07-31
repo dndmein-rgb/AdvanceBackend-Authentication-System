@@ -11,4 +11,5 @@ export const adminRoleSelect = {
   id: true,
   name: true,
   createdAt: true,
+  isSystem: true,
 } satisfies Prisma.RoleSelect;

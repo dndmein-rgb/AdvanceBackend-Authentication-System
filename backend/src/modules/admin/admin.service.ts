@@ -3,11 +3,12 @@ import { IAdminRepository } from "./admin.interface";
 import {
   AdminUserDTO,
   CursorPaginationResult,
-  GetAllRolesType,
 } from "./admin.types";
 import { Prisma } from "@/generated/prisma/client";
 import {
+  toCursorPaginationResponse,
   toRoleDetailsResponse,
+  toRoleListResponse,
   toRoleResponse,
   toUserResponse,
 } from "./admin.mapper";
@@ -18,8 +19,12 @@ import {
   RemoveRoleDTO,
   UpdateRoleDTO,
 } from "./admin.schema";
-import { RoleDetailsResponseDTO, RoleResponseDTO } from "./admin.response";
+import { RoleDetailsResponseDTO, RoleListResponseDTO, RoleResponseDTO } from "./admin.response";
 import { PaginationDTO } from "@/common/schema/pagination.schema";
+import {
+  ensureRoleIsDeletable,
+  ensureRoleIsEditable,
+} from "./admin.guard";
 
 export class AdminService {
   constructor(private readonly adminRepo: IAdminRepository) {}
@@ -27,7 +32,11 @@ export class AdminService {
   async getAllUsers(
     query: PaginationDTO,
   ): Promise<CursorPaginationResult<AdminUserDTO>> {
-    return await this.adminRepo.getAllUsers(query.cursor, query.limit);
+    const users = await this.adminRepo.getAllUsers(query.cursor, query.limit);
+    return toCursorPaginationResponse(
+        users,
+        toUserResponse,
+      );
   }
   async getUserById(userId: string): Promise<AdminUserDTO> {
     const user = await this.adminRepo.findUserById(userId);
@@ -37,8 +46,12 @@ export class AdminService {
     return toUserResponse(user);
   }
 
-  async getAllRoles(): Promise<GetAllRolesType> {
-    return await this.adminRepo.getAllRoles();
+  async getAllRoles(query:PaginationDTO): Promise<CursorPaginationResult<RoleListResponseDTO>> {
+    const result = await this.adminRepo.getAllRoles(query.cursor, query.limit);
+    return toCursorPaginationResponse(
+     result,
+     toRoleListResponse
+    );
   }
 
   async getRoleById(roleId: string): Promise<RoleDetailsResponseDTO> {
@@ -64,12 +77,16 @@ export class AdminService {
     if (!role) {
       throw new AppError("Role not found", 404);
     }
+    ensureRoleIsEditable(role);
+    if (!data.name) {
+       throw new AppError("Nothing to update", 400);
+     }
     const existingRole = await this.adminRepo.findRoleByName(data.name);
     if (existingRole && existingRole.id !== roleId) {
       throw new AppError("Role already exists", 409);
     }
 
-    const updatedRole = await this.adminRepo.updateRole(roleId, data);
+    const updatedRole = await this.adminRepo.updateRole(roleId, {name:data.name});
     return toRoleResponse(updatedRole);
   }
   async deleteRole(roleId: string): Promise<void> {
@@ -78,35 +95,36 @@ export class AdminService {
     if (!role) {
       throw new AppError("Role not found", 404);
     }
-
+    ensureRoleIsDeletable(role);
     await this.adminRepo.deleteRole(roleId);
   }
   private async getValidatedPermissionIds(
-    roleId: string,
-    data: AssignPermissionsDTO,
+    permissions: AssignPermissionsDTO["permissions"],
   ): Promise<string[]> {
-    const role = await this.adminRepo.getRoleById(roleId);
+    const dbPermissions =
+      await this.adminRepo.findPermissionsByNames(permissions);
 
-    if (!role) {
-      throw new AppError("Role not found", 404);
-    }
-
-    const permissions = await this.adminRepo.findPermissionsByNames(
-      data.permissions,
-    );
-
-    if (permissions.length !== data.permissions.length) {
+    if (dbPermissions.length !== permissions.length) {
       throw new AppError("One or more permissions are invalid", 400);
     }
 
-    return permissions.map((permission) => permission.id);
+    return dbPermissions.map((permission) => permission.id);
   }
 
   async assignPermissionsToRole(
     roleId: string,
     data: AssignPermissionsDTO,
   ): Promise<void> {
-    const permissionIds = await this.getValidatedPermissionIds(roleId, data);
+    const role = await this.adminRepo.getRoleById(roleId);
+
+    if (!role) {
+      throw new AppError("Role not found", 404);
+    }
+
+    ensureRoleIsEditable(role);
+    const permissionIds = await this.getValidatedPermissionIds(
+      data.permissions,
+    );
 
     await this.adminRepo.assignPermissionsToRole(roleId, permissionIds);
   }
@@ -139,30 +157,23 @@ export class AdminService {
       throw new AppError("User not found", 404);
     }
 
-    const role = await this.adminRepo.getRoleById(data.roleId);
+    await this.adminRepo.removeRoleFromUser(userId, data.roleId);
+  }
+
+  async replaceRolePermissions(
+    roleId: string,
+    data: AssignPermissionsDTO,
+  ): Promise<void> {
+    const role = await this.adminRepo.getRoleById(roleId);
 
     if (!role) {
       throw new AppError("Role not found", 404);
     }
 
-    try {
-      await this.adminRepo.removeRoleFromUser(userId, data.roleId);
-    } catch (error) {
-      if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === "P2025"
-      ) {
-        throw new AppError("Role is not assigned to user", 404);
-      }
-
-      throw error;
-    }
-  }
-  async replaceRolePermissions(
-    roleId: string,
-    data: AssignPermissionsDTO,
-  ): Promise<void> {
-    const permissionIds = await this.getValidatedPermissionIds(roleId, data);
+    ensureRoleIsEditable(role);
+    const permissionIds = await this.getValidatedPermissionIds(
+      data.permissions,
+    );
     await this.adminRepo.replaceRolePermissions(roleId, permissionIds);
   }
 }

@@ -29,6 +29,8 @@ model User{
 
   sessions   Session[]
   userRoles  UserRole[]
+
+  @@index([createdAt,id])
 }
 
 model Session{
@@ -50,13 +52,17 @@ updatedAt    DateTime    @updatedAt
 model Role{
 id           String         @id @default(uuid())
 name         String         @unique
+isSystem   Boolean          @default(false)
 
 createdAt    DateTime       @default(now())
 
 userRoles       UserRole[]
 rolePermissions  RolePermission[]
 
+@@index([createdAt,id])
 }
+
+
 
 
 
@@ -78,6 +84,9 @@ user    User    @relation(fields:[userId],references:[id] , onDelete:Cascade)
 role    Role    @relation(fields:[roleId],references:[id],onDelete:Cascade)
 
 @@id([userId,roleId])
+
+@@index([userId])
+@@index([roleId])
 }
 
 
@@ -91,4 +100,7 @@ role              Role          @relation(fields:[roleId],references:[id],onDele
 permission        Permission    @relation(fields:[permissionId],references:[id],onDelete:Cascade)
 
 @@id([roleId,permissionId])
+
+@@index([roleId])
+@@index([permissionId])
 }

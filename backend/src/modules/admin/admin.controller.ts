@@ -8,11 +8,14 @@ export const getAllUsersController = asyncHandler(
   async (req: Request, res: Response) => {
     const query = req.query as unknown as PaginationDTO;
 
-    const result = await adminService.getAllUsers(query)
+    const result = await adminService.getAllUsers(query);
     sendResponse(res, 200, {
       success: true,
       message: "All users fetched successfully",
       data: result,
+      meta: {
+        pagination: result.pagination,
+      },
     });
   },
 );
@@ -29,13 +32,17 @@ export const getUserByIdController = asyncHandler(
   },
 );
 export const getAllRolesController = asyncHandler(
-  async (_req: Request, res: Response) => {
-    const result = await adminService.getAllRoles();
+  async (req: Request, res: Response) => {
+    const query = req.query as unknown as PaginationDTO;
+    const result = await adminService.getAllRoles(query);
 
     sendResponse(res, 200, {
       success: true,
-      message: "User roles fetched successfully",
+      message: "Roles fetched successfully",
       data: result,
+      meta: {
+        pagination: result.pagination,
+      },
     });
   },
 );
