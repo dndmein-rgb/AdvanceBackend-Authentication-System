@@ -1,11 +1,16 @@
-import { Role } from "@/generated/prisma/client";
 
-export type RoleResponseDTO = Pick<Role, "id" | "name" | "createdAt">;
+export interface RoleResponseDTO {
+  id:string;
+  name:string;
+  createdAt:Date;
+  isSystem:boolean;
+}
 
 export interface PermissionResponseDTO {
   id: string;
   name: string;
 }
+
 export interface UserRoleResponseDTO {
   id: string;
   email: string;
@@ -20,4 +25,21 @@ export interface RoleDetailsResponseDTO extends RoleResponseDTO {
   }[];
 
   users: UserRoleResponseDTO[];
+}
+
+export interface RoleListResponseDTO {
+  id: string;
+  name: string;
+  createdAt: Date;
+  userCount: number;
+  permissionCount: number;
+  isSystem:boolean
+}
+export interface CursorPaginationResponseDTO<T> {
+  data: T[];
+  pagination: {
+    nextCursor: string | null;
+    hasMore: boolean;
+    limit: number;
+  };
 }

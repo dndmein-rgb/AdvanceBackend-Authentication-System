@@ -4,16 +4,15 @@ import {
   AdminUserType,
   CreateRoleData,
   CursorPaginationResult,
-  GetAllRolesType,
   GetRoleByIdType,
-  PrismaTransaction,
+  RoleListType,
   UpdateRoleData,
-  UserRoleWithRoleType,
 } from "./admin.types";
 import { Role, UserRole } from "@/generated/prisma/client";
-import { adminUserSelect } from "./admin.select";
+import { adminRoleSelect, adminUserSelect } from "./admin.select";
 import { Permission as PermissionModel } from "@/generated/prisma/client";
 import { Permission } from "@/common/constants/permissions";
+import { AppError } from "@/common/errors/app-error";
 
 export class AdminRepository implements IAdminRepository {
   async getAllUsers(
@@ -29,8 +28,6 @@ export class AdminRepository implements IAdminRepository {
         },
         skip: 1,
       }),
-
-      skip: cursor ? 1 : 0,
 
       orderBy: [
         {
@@ -52,8 +49,11 @@ export class AdminRepository implements IAdminRepository {
 
     return {
       data: users,
-      hasMore,
-      nextCursor: hasMore ? users[users.length - 1].id : null,
+      pagination: {
+        hasMore,
+        nextCursor: hasMore ? users[users.length - 1].id : null,
+        limit,
+      },
     };
   }
   async findUserById(userId: string): Promise<AdminUserType | null> {
@@ -62,40 +62,62 @@ export class AdminRepository implements IAdminRepository {
       select: adminUserSelect,
     });
   }
-  async getAllRoles(): Promise<GetAllRolesType> {
-    return prisma.role.findMany({
-      orderBy: { createdAt: "desc" },
-      select: {
-        id: true,
-        name: true,
-        createdAt: true,
+  async getAllRoles(
+    cursor?: string,
+    limit = 10,
+  ): Promise<CursorPaginationResult<RoleListType>> {
+    const roles = await prisma.role.findMany({
+      take: limit + 1,
 
-        userRoles: {
-          select: {
-            userId: true,
-          },
+      ...(cursor && {
+        cursor: {
+          id: cursor,
         },
+        skip: 1,
+      }),
 
-        rolePermissions: {
+      orderBy: [
+        {
+          createdAt: "desc",
+        },
+        {
+          id: "desc",
+        },
+      ],
+
+      select: {
+        ...adminRoleSelect,
+
+        _count: {
           select: {
-            permission: {
-              select: {
-                id: true,
-                name: true,
-              },
-            },
+            userRoles: true,
+            rolePermissions: true,
           },
         },
       },
     });
+
+    const hasMore = roles.length > limit;
+
+    if (hasMore) {
+      roles.pop();
+    }
+
+    return {
+      data: roles,
+
+      pagination: {
+        hasMore,
+        nextCursor: hasMore ? roles[roles.length - 1].id : null,
+        limit,
+      },
+    };
   }
   async getRoleById(roleId: string): Promise<GetRoleByIdType | null> {
     return prisma.role.findUnique({
       where: { id: roleId },
       select: {
-        id: true,
-        name: true,
-        createdAt: true,
+        ...adminRoleSelect,
 
         rolePermissions: {
           select: {
@@ -132,15 +154,42 @@ export class AdminRepository implements IAdminRepository {
     return await prisma.role.update({
       where: { id: roleId },
       data: {
-        name: data.name,
+        ...(data.name && {
+          name: data.name,
+        }),
       },
     });
   }
-  async deleteRole(roleId: string): Promise<Role> {
-    return prisma.role.delete({
-      where: {
-        id: roleId,
-      },
+  async deleteRole(roleId: string): Promise<void> {
+    await prisma.$transaction(async (tx) => {
+      const role = await tx.role.findUnique({
+        where: {
+          id: roleId,
+        },
+        select: {
+          id: true,
+        },
+      });
+
+      if (!role) {
+        throw new AppError("Role not found", 404);
+      }
+
+      const assignedUsers = await tx.userRole.count({
+        where: {
+          roleId,
+        },
+      });
+
+      if (assignedUsers > 0) {
+        throw new AppError("Cannot delete role assigned to users", 409);
+      }
+
+      await tx.role.delete({
+        where: {
+          id: roleId,
+        },
+      });
     });
   }
   async findRoleByName(name: string): Promise<Role | null> {
@@ -194,43 +243,47 @@ export class AdminRepository implements IAdminRepository {
           roleId,
           permissionId,
         })),
+        skipDuplicates: true,
       });
     });
   }
 
-  async findUserRole(
-    tx:PrismaTransaction,
-    userId: string,
-    roleId: string,
-  ): Promise<UserRoleWithRoleType | null> {
-    return await tx.userRole.findUnique({
-      where: {
-        userId_roleId: {
-          userId,
-          roleId,
+  async removeRoleFromUser(userId: string, roleId: string): Promise<void> {
+    await prisma.$transaction(async (tx) => {
+      const assignment = await tx.userRole.findUnique({
+        where: {
+          userId_roleId: {
+            userId,
+            roleId,
+          },
         },
-      },
-      include: { role: true },
-    });
-  }
+        include: {
+          role: true,
+        },
+      });
+      if (!assignment) {
+        throw new AppError("Role is not assigned to user", 404);
+      }
 
-  async countUsersByRoleId(tx:PrismaTransaction,roleId: string): Promise<number> {
-    return await tx.userRole.count({
-      where: {
-        role: {
-          id:roleId
+      if (assignment.role.isSystem) {
+        const adminCount = await tx.userRole.count({
+          where: {
+            roleId: assignment.roleId,
+          },
+        });
+
+        if (adminCount <= 1) {
+          throw new AppError("Cannot remove the last admin", 403);
+        }
+      }
+      await tx.userRole.delete({
+        where: {
+          userId_roleId: {
+            userId,
+            roleId,
+          },
         },
-      },
-    });
-  }
-  async removeRoleFromUser(tx:PrismaTransaction,userId: string, roleId: string): Promise<void> {
-    await tx.userRole.delete({
-      where: {
-        userId_roleId: {
-          userId,
-          roleId,
-        },
-      },
+      });
     });
   }
 }

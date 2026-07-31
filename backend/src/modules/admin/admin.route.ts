@@ -48,6 +48,7 @@ router.get(
   "/roles",
   authenticate,
   authorizePermissions(PERMISSIONS.MANAGE_ROLES),
+   validate(paginationSchema,"query"),
   getAllRolesController,
 );
 router.get(
@@ -66,7 +67,7 @@ router.post(
   createRoleController,
 );
 
-router.put(
+router.patch(
   "/roles/:roleId",
   authenticate,
   authorizePermissions(PERMISSIONS.MANAGE_ROLES),
@@ -87,8 +88,8 @@ router.post(
   "/roles/:roleId/permissions",
   authenticate,
   authorizePermissions(PERMISSIONS.MANAGE_ROLES),
-  validate(assignPermissionsSchema),
   validate(roleIdSchema, "params"),
+  validate(assignPermissionsSchema),
   assignPermissionsController,
 );
 
@@ -96,8 +97,8 @@ router.post(
   "/users/:userId/roles",
   authenticate,
   authorizePermissions(PERMISSIONS.MANAGE_ROLES),
-  validate(assignRoleSchema),
   validate(userIdSchema, "params"),
+  validate(assignRoleSchema),
   assignRoleToUserController,
 );
 
@@ -105,8 +106,8 @@ router.delete(
   "/users/:userId/roles",
   authenticate,
   authorizePermissions(PERMISSIONS.MANAGE_ROLES),
-  validate(removeRoleSchema),
   validate(userIdSchema, "params"),
+  validate(removeRoleSchema),
 
   removeRoleFromUserController,
 );

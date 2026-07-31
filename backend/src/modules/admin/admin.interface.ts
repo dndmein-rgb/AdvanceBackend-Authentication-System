@@ -4,11 +4,9 @@ import {
   AdminUserType,
   CreateRoleData,
   CursorPaginationResult,
-  GetAllRolesType,
   GetRoleByIdType,
-  PrismaTransaction,
+  RoleListType,
   UpdateRoleData,
-  UserRoleWithRoleType,
 } from "./admin.types";
 import { Permission } from "@/common/constants/permissions";
 
@@ -20,13 +18,16 @@ export interface IAdminRepository {
 
   findUserById(userId: string): Promise<AdminUserType | null>;
 
-  getAllRoles(): Promise<GetAllRolesType>;
+  getAllRoles(
+    cursor?: string,
+    limit?: number,
+  ): Promise<CursorPaginationResult<RoleListType>>;
   getRoleById(roleId: string): Promise<GetRoleByIdType | null>;
   findRoleByName(name: string): Promise<Role | null>;
 
   createRole(data: CreateRoleData): Promise<Role>;
   updateRole(roleId: string, data: UpdateRoleData): Promise<Role>;
-  deleteRole(roleId: string): Promise<Role>;
+  deleteRole(roleId: string): Promise<void>;
 
   assignPermissionsToRole(
     roleId: string,
@@ -42,17 +43,6 @@ export interface IAdminRepository {
 
   assignRoleToUser(userId: string, roleId: string): Promise<UserRole>;
 
-  findUserRole(
-    tx: PrismaTransaction,
-    userId: string,
-    roleId: string,
-  ): Promise<UserRoleWithRoleType | null>;
-  
-  countUsersByRoleId(tx: PrismaTransaction, roleId: string): Promise<number>;
+  removeRoleFromUser(userId: string, roleId: string): Promise<void>;
 
-  removeRoleFromUser(
-    tx: PrismaTransaction,
-    userId: string,
-    roleId: string,
-  ): Promise<void>;
 }
