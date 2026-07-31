@@ -98,14 +98,20 @@ export interface UpdateRoleData {
   name: string;
 }
 
-
 export interface AssignPermissionsData {
   permissions: Permission[];
 }
-
 
 export interface CursorPaginationResult<T> {
   data: T[];
   nextCursor: string | null;
   hasMore: boolean;
 }
+
+export type UserRoleWithRoleType = Prisma.UserRoleGetPayload<{
+  include: {
+    role: true;
+  };
+}>;
+
+export type PrismaTransaction = Prisma.TransactionClient;

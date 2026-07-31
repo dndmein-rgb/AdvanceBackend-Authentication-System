@@ -6,12 +6,17 @@ import {
   CursorPaginationResult,
   GetAllRolesType,
   GetRoleByIdType,
+  PrismaTransaction,
   UpdateRoleData,
+  UserRoleWithRoleType,
 } from "./admin.types";
 import { Permission } from "@/common/constants/permissions";
 
 export interface IAdminRepository {
-  getAllUsers(cursor?:string,limit?:number): Promise<CursorPaginationResult<AdminUserType>>;
+  getAllUsers(
+    cursor?: string,
+    limit?: number,
+  ): Promise<CursorPaginationResult<AdminUserType>>;
 
   findUserById(userId: string): Promise<AdminUserType | null>;
 
@@ -37,5 +42,17 @@ export interface IAdminRepository {
 
   assignRoleToUser(userId: string, roleId: string): Promise<UserRole>;
 
-  removeRoleFromUser(userId: string, roleId: string): Promise<void>;
+  findUserRole(
+    tx: PrismaTransaction,
+    userId: string,
+    roleId: string,
+  ): Promise<UserRoleWithRoleType | null>;
+  
+  countUsersByRoleId(tx: PrismaTransaction, roleId: string): Promise<number>;
+
+  removeRoleFromUser(
+    tx: PrismaTransaction,
+    userId: string,
+    roleId: string,
+  ): Promise<void>;
 }

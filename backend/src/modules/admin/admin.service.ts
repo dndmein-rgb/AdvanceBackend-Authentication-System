@@ -20,6 +20,8 @@ import {
 } from "./admin.schema";
 import { RoleDetailsResponseDTO, RoleResponseDTO } from "./admin.response";
 import { PaginationDTO } from "@/common/schema/pagination.schema";
+import { prisma } from "@/infrastructure/database";
+import { SYSTEM_ROLES } from "@/common/constants/roles";
 
 export class AdminService {
   constructor(private readonly adminRepo: IAdminRepository) {}
@@ -133,30 +135,41 @@ export class AdminService {
     }
   }
   async removeRoleFromUser(userId: string, data: RemoveRoleDTO): Promise<void> {
-    const user = await this.adminRepo.findUserById(userId);
-
-    if (!user) {
-      throw new AppError("User not found", 404);
-    }
-
-    const role = await this.adminRepo.getRoleById(data.roleId);
-
-    if (!role) {
-      throw new AppError("Role not found", 404);
-    }
-
-    try {
-      await this.adminRepo.removeRoleFromUser(userId, data.roleId);
-    } catch (error) {
-      if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === "P2025"
-      ) {
+    await prisma.$transaction(async (tx) => {
+      const user = await this.adminRepo.findUserById(userId);
+      if (!user) {
+        throw new AppError("User not found", 404);
+      }
+      const assignment = await this.adminRepo.findUserRole(
+        tx,
+        userId,
+        data.roleId,
+      );
+      if (!assignment) {
         throw new AppError("Role is not assigned to user", 404);
       }
+      if (assignment.role.name === SYSTEM_ROLES.ADMIN) {
+        const adminCount = await this.adminRepo.countUsersByRoleId(
+          tx,
+          assignment.roleId,
+        );
+        if (adminCount <= 1) {
+          throw new AppError("Cannot remove the last admin", 403);
+        }
+      }
+      try {
+        await this.adminRepo.removeRoleFromUser(tx, userId, data.roleId);
+      } catch (error) {
+        if (
+          error instanceof Prisma.PrismaClientKnownRequestError &&
+          error.code === "P2025"
+        ) {
+          throw new AppError("Role is not assigned to user", 404);
+        }
 
-      throw error;
-    }
+        throw error;
+      }
+    });
   }
   async replaceRolePermissions(
     roleId: string,

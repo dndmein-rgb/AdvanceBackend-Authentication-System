@@ -6,7 +6,9 @@ import {
   CursorPaginationResult,
   GetAllRolesType,
   GetRoleByIdType,
+  PrismaTransaction,
   UpdateRoleData,
+  UserRoleWithRoleType,
 } from "./admin.types";
 import { Role, UserRole } from "@/generated/prisma/client";
 import { adminUserSelect } from "./admin.select";
@@ -178,16 +180,7 @@ export class AdminRepository implements IAdminRepository {
       },
     });
   }
-  async removeRoleFromUser(userId: string, roleId: string): Promise<void> {
-    await prisma.userRole.delete({
-      where: {
-        userId_roleId: {
-          userId,
-          roleId,
-        },
-      },
-    });
-  }
+
   async replaceRolePermissions(
     roleId: string,
     permissionIds: string[],
@@ -202,6 +195,42 @@ export class AdminRepository implements IAdminRepository {
           permissionId,
         })),
       });
+    });
+  }
+
+  async findUserRole(
+    tx:PrismaTransaction,
+    userId: string,
+    roleId: string,
+  ): Promise<UserRoleWithRoleType | null> {
+    return await tx.userRole.findUnique({
+      where: {
+        userId_roleId: {
+          userId,
+          roleId,
+        },
+      },
+      include: { role: true },
+    });
+  }
+
+  async countUsersByRoleId(tx:PrismaTransaction,roleId: string): Promise<number> {
+    return await tx.userRole.count({
+      where: {
+        role: {
+          id:roleId
+        },
+      },
+    });
+  }
+  async removeRoleFromUser(tx:PrismaTransaction,userId: string, roleId: string): Promise<void> {
+    await tx.userRole.delete({
+      where: {
+        userId_roleId: {
+          userId,
+          roleId,
+        },
+      },
     });
   }
 }
