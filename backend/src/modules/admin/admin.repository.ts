@@ -1,6 +1,5 @@
 import { IAdminRepository } from "./admin.interface";
 import { prisma } from "@/infrastructure/database";
-import {  AdminUserType, GetAllRolesType, GetAllUsersType, GetRoleByIdType } from "./admin.types";
 import {
   AdminUserType,
   CreateRoleData,
@@ -153,7 +152,7 @@ export class AdminRepository implements IAdminRepository {
     });
   }
   async updateRole(roleId: string, data: UpdateRoleData): Promise<Role> {
-    return  prisma.role.update({
+    return prisma.role.update({
       where: { id: roleId },
       data: {
         ...(data.name && {
@@ -175,18 +174,18 @@ export class AdminRepository implements IAdminRepository {
       }
 
       try {
-          await tx.role.delete({
-              where: { id: roleId }
-          });
+        await tx.role.delete({
+          where: { id: roleId }
+        });
       } catch (error) {
-          if (
-              error instanceof Prisma.PrismaClientKnownRequestError &&
-              error.code === "P2025"
-          ) {
-              throw new AppError("Role not found", 404);
-          }
+        if (
+          error instanceof Prisma.PrismaClientKnownRequestError &&
+          error.code === "P2025"
+        ) {
+          throw new AppError("Role not found", 404);
+        }
       
-          throw error;
+        throw error;
       }
     });
   }
@@ -220,7 +219,7 @@ export class AdminRepository implements IAdminRepository {
     });
   }
   async assignRoleToUser(userId: string, roleId: string): Promise<UserRole> {
-    return  prisma.userRole.create({
+    return prisma.userRole.create({
       data: {
         userId,
         roleId,
@@ -284,4 +283,5 @@ export class AdminRepository implements IAdminRepository {
       });
     });
   }
+}
 
