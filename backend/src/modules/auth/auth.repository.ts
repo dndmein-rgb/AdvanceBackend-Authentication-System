@@ -77,7 +77,7 @@ export class AuthRepository implements IAuthRepository {
         role: {
           select: {
             name: true,
-  
+
             rolePermissions: {
               select: {
                 permission: {
@@ -91,5 +91,16 @@ export class AuthRepository implements IAuthRepository {
         },
       },
     });
+  }
+  async findUserIdsByRole(roleId: string): Promise<string[]> {
+    const userRoles = await prisma.userRole.findMany({
+      where: {
+        roleId,
+      },
+      select: {
+        userId: true,
+      },
+    });
+    return userRoles.map((userRole) => userRole.userId);
   }
 }

@@ -24,7 +24,7 @@ export interface IAuthRepository {
 
   findUserById(userId: string): Promise<CurrentUserDTO | null>;
 
-  getUserPermissions(
-     userId: string,
-   ): Promise<UserRoleWithPermissionsType[]>;
+  getUserPermissions(userId: string): Promise<UserRoleWithPermissionsType[]>;
+
+  findUserIdsByRole(roleId: string): Promise<string[]>;
 }
