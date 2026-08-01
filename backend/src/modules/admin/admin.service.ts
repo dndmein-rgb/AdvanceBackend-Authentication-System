@@ -1,12 +1,9 @@
 import { AppError } from "@/common/errors/app-error";
 import { IAdminRepository } from "./admin.interface";
-<<<<<<< Updated upstream
 import {
   AdminUserDTO,
-  GetAllRolesType,
-  GetRoleByIdType,
+  CursorPaginationResult,
 } from "./admin.types";
-=======
 import { AdminUserDTO, CursorPaginationResult } from "./admin.types";
 import { Prisma } from "@/generated/prisma/client";
 import {
@@ -35,49 +32,53 @@ import {
   ensureRoleIsEditable,
 } from "./admin.guard";
 import { permissionService } from "@/common/services/permission.service";
->>>>>>> Stashed changes
+import { RoleDetailsResponseDTO, RoleListResponseDTO, RoleResponseDTO } from "./admin.response";
+import { PaginationDTO } from "@/common/schema/pagination.schema";
+import {
+  ensureRoleIsDeletable,
+  ensureRoleIsEditable,
+} from "./admin.guard";
 
 export class AdminService {
   constructor(private readonly adminRepo: IAdminRepository) {}
 
-<<<<<<< Updated upstream
   async getAllUsers(): Promise<AdminUserDTO[]> {
     const users = await this.adminRepo.getAllUsers();
     return users;
-=======
   async getAllUsers(
     query: PaginationDTO,
   ): Promise<CursorPaginationResult<AdminUserDTO>> {
     const users = await this.adminRepo.getAllUsers(query.cursor, query.limit);
     return toCursorPaginationResponse(users, toUserResponse);
->>>>>>> Stashed changes
+
+    return toCursorPaginationResponse(
+        users,
+        toUserResponse,
+      );
   }
   async getUserById(userId: string): Promise<AdminUserDTO> {
     const user = await this.adminRepo.findUserById(userId);
     if (!user) {
       throw new AppError("User not found", 404);
     }
-    return user;
+    return toUserResponse(user);
   }
 
-<<<<<<< Updated upstream
   async getAllRoles(): Promise<GetAllRolesType> {
     return await this.adminRepo.getAllRoles();
-=======
-  async getAllRoles(
-    query: PaginationDTO,
-  ): Promise<CursorPaginationResult<RoleListResponseDTO>> {
+
+  async getAllRoles(query:PaginationDTO): Promise<CursorPaginationResult<RoleListResponseDTO>> {
     const result = await this.adminRepo.getAllRoles(query.cursor, query.limit);
-    return toCursorPaginationResponse(result, toRoleListResponse);
->>>>>>> Stashed changes
+    return toCursorPaginationResponse(
+     result,
+     toRoleListResponse
+    );
   }
 
-  async getRoleById(roleId: string): Promise<GetRoleByIdType> {
+  async getRoleById(roleId: string): Promise<RoleDetailsResponseDTO> {
     const role = await this.adminRepo.getRoleById(roleId);
     if (!role) throw new AppError("Role not found", 404);
-<<<<<<< Updated upstream
     return role;
-=======
     return toRoleDetailsResponse(role);
   }
 
@@ -203,6 +204,6 @@ export class AdminService {
     );
     await this.adminRepo.replaceRolePermissions(roleId, permissionIds);
     await permissionService.invalidateRoleUsers(roleId);
->>>>>>> Stashed changes
+
   }
 }

@@ -22,6 +22,10 @@ export const seedAdmin = async (prisma: PrismaClient): Promise<void> => {
     where: {
       name: SYSTEM_ROLES.ADMIN,
     },
+    select: {
+      id: true,
+      isSystem: true,
+    },
   });
 
   if (!adminRole) {

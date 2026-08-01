@@ -1,15 +1,31 @@
 import express from "express";
 import {
+  assignPermissionsController,
+  assignRoleToUserController,
+  createRoleController,
+  deleteRoleController,
   getAllRolesController,
   getAllUsersController,
   getRoleByIdController,
   getUserByIdController,
+  removeRoleFromUserController,
+  replaceRolePermissionsController,
+  updateRoleController,
 } from "./admin.controller";
 import { authorizePermissions } from "@/common/middleware/authorization.middleware";
 import { PERMISSIONS } from "@/common/constants/permissions";
 import { authenticate } from "@/common/middleware/auth.middleware";
 import { validate } from "@/common/middleware/validate.middleware";
-import { getRoleByIdSchema } from "./admin.schema";
+import {
+  assignPermissionsSchema,
+  assignRoleSchema,
+  createRoleSchema,
+  removeRoleSchema,
+  roleIdSchema,
+  updateRoleSchema,
+  userIdSchema,
+} from "./admin.schema";
+import { paginationSchema } from "@/common/schema/pagination.schema";
 
 const router = express.Router();
 
@@ -18,26 +34,90 @@ router
   .get(
     authenticate,
     authorizePermissions(PERMISSIONS.MANAGE_USERS),
+     validate(paginationSchema, "query"),
     getAllUsersController,
   );
-router
-  .route("/users/:userId")
-  .get(
-    authenticate,
-    authorizePermissions(PERMISSIONS.MANAGE_USERS),
-    getUserByIdController,
-  );
+router.route("/users/:userId").get(
+  authenticate,
+  authorizePermissions(PERMISSIONS.MANAGE_USERS),
+  validate(userIdSchema, "params"),
+
+  getUserByIdController,
+);
 router.get(
   "/roles",
   authenticate,
   authorizePermissions(PERMISSIONS.MANAGE_ROLES),
+   validate(paginationSchema,"query"),
   getAllRolesController,
 );
 router.get(
   "/roles/:roleId",
   authenticate,
-  authorizePermissions(PERMISSIONS.MANAGE_ROLES),validate(getRoleByIdSchema,"params"),
+  authorizePermissions(PERMISSIONS.MANAGE_ROLES),
+  validate(roleIdSchema, "params"),
   getRoleByIdController,
 );
 
+router.post(
+  "/roles",
+  authenticate,
+  authorizePermissions(PERMISSIONS.MANAGE_ROLES),
+  validate(createRoleSchema),
+  createRoleController,
+);
+
+router.patch(
+  "/roles/:roleId",
+  authenticate,
+  authorizePermissions(PERMISSIONS.MANAGE_ROLES),
+  validate(roleIdSchema, "params"),
+  validate(updateRoleSchema),
+  updateRoleController,
+);
+
+router.delete(
+  "/roles/:roleId",
+  authenticate,
+  authorizePermissions(PERMISSIONS.MANAGE_ROLES),
+  validate(roleIdSchema, "params"),
+  deleteRoleController,
+);
+
+router.post(
+  "/roles/:roleId/permissions",
+  authenticate,
+  authorizePermissions(PERMISSIONS.MANAGE_ROLES),
+  validate(roleIdSchema, "params"),
+  validate(assignPermissionsSchema),
+  assignPermissionsController,
+);
+
+router.post(
+  "/users/:userId/roles",
+  authenticate,
+  authorizePermissions(PERMISSIONS.MANAGE_ROLES),
+  validate(userIdSchema, "params"),
+  validate(assignRoleSchema),
+  assignRoleToUserController,
+);
+
+router.delete(
+  "/users/:userId/roles",
+  authenticate,
+  authorizePermissions(PERMISSIONS.MANAGE_ROLES),
+  validate(userIdSchema, "params"),
+  validate(removeRoleSchema),
+
+  removeRoleFromUserController,
+);
+
+router.put(
+  "/roles/:roleId/permissions",
+  authenticate,
+  authorizePermissions(PERMISSIONS.MANAGE_ROLES),
+  validate(roleIdSchema, "params"),
+  validate(assignPermissionsSchema),
+  replaceRolePermissionsController,
+);
 export default router;

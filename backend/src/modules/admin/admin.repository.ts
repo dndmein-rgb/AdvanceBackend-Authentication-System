@@ -1,8 +1,6 @@
 import { IAdminRepository } from "./admin.interface";
 import { prisma } from "@/infrastructure/database";
-<<<<<<< Updated upstream
 import {  AdminUserType, GetAllRolesType, GetAllUsersType, GetRoleByIdType } from "./admin.types";
-=======
 import {
   AdminUserType,
   CreateRoleData,
@@ -16,69 +14,112 @@ import { adminRoleSelect, adminUserSelect } from "./admin.select";
 import { Permission as PermissionModel } from "@/generated/prisma/client";
 import { Permission } from "@/common/constants/permissions";
 import { AppError } from "@/common/errors/app-error";
->>>>>>> Stashed changes
+
 
 export class AdminRepository implements IAdminRepository {
-  
-  async getAllUsers(): Promise<GetAllUsersType> {
-    return await prisma.user.findMany({
-      orderBy: { createdAt: "desc" },
-      select: {
-        id: true,
-        email: true,
-        authProvider: true,
-        isEmailVerified: true,
-        createdAt: true,
-      },
-    });
-  }
+  async getAllUsers(
+    cursor?: string,
+    limit = 10,
+  ): Promise<CursorPaginationResult<AdminUserType>> {
+    const users = await prisma.user.findMany({
+      take: limit + 1,
 
+      ...(cursor && {
+        cursor: {
+          id: cursor,
+        },
+        skip: 1,
+      }),
+
+      orderBy: [
+        {
+          createdAt: "desc",
+        },
+        {
+          id: "desc",
+        },
+      ],
+
+      select: adminUserSelect,
+    });
+
+    const hasMore = users.length > limit;
+
+    if (hasMore) {
+      users.pop();
+    }
+
+    return {
+      data: users,
+      pagination: {
+        hasMore,
+        nextCursor: hasMore ? users[users.length - 1].id : null,
+        limit,
+      },
+    };
+  }
   async findUserById(userId: string): Promise<AdminUserType | null> {
-    return await prisma.user.findUnique({
+    return prisma.user.findUnique({
       where: { id: userId },
-      select: {
-        id: true,
-        email: true,
-        authProvider: true,
-        isEmailVerified: true,
-        createdAt: true,
-      },
+      select: adminUserSelect,
     });
   }
-  async getAllRoles(): Promise<GetAllRolesType> {
-    return await prisma.role.findMany({
-      orderBy: { createdAt: "desc" },
-      select: {
-        id: true,
-        name: true,
-        createdAt: true,
+  async getAllRoles(
+    cursor?: string,
+    limit = 10,
+  ): Promise<CursorPaginationResult<RoleListType>> {
+    const roles = await prisma.role.findMany({
+      take: limit + 1,
 
-        userRoles: {
-          select: {
-            userId: true,
-          },
+      ...(cursor && {
+        cursor: {
+          id: cursor,
         },
+        skip: 1,
+      }),
 
-        rolePermissions: {
+      orderBy: [
+        {
+          createdAt: "desc",
+        },
+        {
+          id: "desc",
+        },
+      ],
+
+      select: {
+        ...adminRoleSelect,
+
+        _count: {
           select: {
-            permission: {
-              select: {
-                id: true,
-                name: true,
-              },
-            },
+            userRoles: true,
+            rolePermissions: true,
           },
         },
       },
     });
+
+    const hasMore = roles.length > limit;
+
+    if (hasMore) {
+      roles.pop();
+    }
+
+    return {
+      data: roles,
+
+      pagination: {
+        hasMore,
+        nextCursor: hasMore ? roles[roles.length - 1].id : null,
+        limit,
+      },
+    };
   }
   async getRoleById(roleId: string): Promise<GetRoleByIdType | null> {
-    return await prisma.role.findUnique({
+    return prisma.role.findUnique({
       where: { id: roleId },
       select: {
-        id: true,
-        name: true,
-        createdAt: true,
+        ...adminRoleSelect,
 
         rolePermissions: {
           select: {
@@ -106,8 +147,6 @@ export class AdminRepository implements IAdminRepository {
       },
     });
   }
-<<<<<<< Updated upstream
-=======
   async createRole(data: CreateRoleData): Promise<Role> {
     return prisma.role.create({
       data: { name: data.name },
@@ -245,5 +284,4 @@ export class AdminRepository implements IAdminRepository {
       });
     });
   }
->>>>>>> Stashed changes
-}
+
