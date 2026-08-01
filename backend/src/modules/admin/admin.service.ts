@@ -4,7 +4,6 @@ import {
   AdminUserDTO,
   CursorPaginationResult,
 } from "./admin.types";
-import { AdminUserDTO, CursorPaginationResult } from "./admin.types";
 import { Prisma } from "@/generated/prisma/client";
 import {
   toCursorPaginationResponse,
@@ -20,21 +19,13 @@ import {
   RemoveRoleDTO,
   UpdateRoleDTO,
 } from "./admin.schema";
-import {
-  RoleDetailsResponseDTO,
-  RoleListResponseDTO,
-  RoleResponseDTO,
-} from "./admin.response";
-import { PaginationDTO } from "@/common/schema/pagination.schema";
-import {
-  ensureRoleIsAssignable,
-  ensureRoleIsDeletable,
-  ensureRoleIsEditable,
-} from "./admin.guard";
+
+
 import { permissionService } from "@/common/services/permission.service";
 import { RoleDetailsResponseDTO, RoleListResponseDTO, RoleResponseDTO } from "./admin.response";
 import { PaginationDTO } from "@/common/schema/pagination.schema";
 import {
+  ensureRoleIsAssignable,
   ensureRoleIsDeletable,
   ensureRoleIsEditable,
 } from "./admin.guard";
@@ -42,9 +33,6 @@ import {
 export class AdminService {
   constructor(private readonly adminRepo: IAdminRepository) {}
 
-  async getAllUsers(): Promise<AdminUserDTO[]> {
-    const users = await this.adminRepo.getAllUsers();
-    return users;
   async getAllUsers(
     query: PaginationDTO,
   ): Promise<CursorPaginationResult<AdminUserDTO>> {
@@ -64,8 +52,6 @@ export class AdminService {
     return toUserResponse(user);
   }
 
-  async getAllRoles(): Promise<GetAllRolesType> {
-    return await this.adminRepo.getAllRoles();
 
   async getAllRoles(query:PaginationDTO): Promise<CursorPaginationResult<RoleListResponseDTO>> {
     const result = await this.adminRepo.getAllRoles(query.cursor, query.limit);
@@ -78,7 +64,6 @@ export class AdminService {
   async getRoleById(roleId: string): Promise<RoleDetailsResponseDTO> {
     const role = await this.adminRepo.getRoleById(roleId);
     if (!role) throw new AppError("Role not found", 404);
-    return role;
     return toRoleDetailsResponse(role);
   }
 
