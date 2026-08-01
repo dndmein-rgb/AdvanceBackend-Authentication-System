@@ -4,6 +4,7 @@ import {
   AdminUserDTO,
   CursorPaginationResult,
 } from "./admin.types";
+import { AdminUserDTO, CursorPaginationResult } from "./admin.types";
 import { Prisma } from "@/generated/prisma/client";
 import {
   toCursorPaginationResponse,
@@ -19,6 +20,18 @@ import {
   RemoveRoleDTO,
   UpdateRoleDTO,
 } from "./admin.schema";
+import {
+  RoleDetailsResponseDTO,
+  RoleListResponseDTO,
+  RoleResponseDTO,
+} from "./admin.response";
+import { PaginationDTO } from "@/common/schema/pagination.schema";
+import {
+  ensureRoleIsAssignable,
+  ensureRoleIsDeletable,
+  ensureRoleIsEditable,
+} from "./admin.guard";
+import { permissionService } from "@/common/services/permission.service";
 import { RoleDetailsResponseDTO, RoleListResponseDTO, RoleResponseDTO } from "./admin.response";
 import { PaginationDTO } from "@/common/schema/pagination.schema";
 import {
@@ -29,10 +42,15 @@ import {
 export class AdminService {
   constructor(private readonly adminRepo: IAdminRepository) {}
 
+  async getAllUsers(): Promise<AdminUserDTO[]> {
+    const users = await this.adminRepo.getAllUsers();
+    return users;
   async getAllUsers(
     query: PaginationDTO,
   ): Promise<CursorPaginationResult<AdminUserDTO>> {
     const users = await this.adminRepo.getAllUsers(query.cursor, query.limit);
+    return toCursorPaginationResponse(users, toUserResponse);
+
     return toCursorPaginationResponse(
         users,
         toUserResponse,
@@ -46,6 +64,9 @@ export class AdminService {
     return toUserResponse(user);
   }
 
+  async getAllRoles(): Promise<GetAllRolesType> {
+    return await this.adminRepo.getAllRoles();
+
   async getAllRoles(query:PaginationDTO): Promise<CursorPaginationResult<RoleListResponseDTO>> {
     const result = await this.adminRepo.getAllRoles(query.cursor, query.limit);
     return toCursorPaginationResponse(
@@ -57,6 +78,7 @@ export class AdminService {
   async getRoleById(roleId: string): Promise<RoleDetailsResponseDTO> {
     const role = await this.adminRepo.getRoleById(roleId);
     if (!role) throw new AppError("Role not found", 404);
+    return role;
     return toRoleDetailsResponse(role);
   }
 
@@ -73,20 +95,22 @@ export class AdminService {
     roleId: string,
     data: UpdateRoleDTO,
   ): Promise<RoleResponseDTO> {
+    if (!data.name) {
+      throw new AppError("Nothing to update", 400);
+    }
     const role = await this.adminRepo.getRoleById(roleId);
     if (!role) {
       throw new AppError("Role not found", 404);
     }
     ensureRoleIsEditable(role);
-    if (!data.name) {
-       throw new AppError("Nothing to update", 400);
-     }
     const existingRole = await this.adminRepo.findRoleByName(data.name);
     if (existingRole && existingRole.id !== roleId) {
       throw new AppError("Role already exists", 409);
     }
 
-    const updatedRole = await this.adminRepo.updateRole(roleId, {name:data.name});
+    const updatedRole = await this.adminRepo.updateRole(roleId, {
+      name: data.name,
+    });
     return toRoleResponse(updatedRole);
   }
   async deleteRole(roleId: string): Promise<void> {
@@ -127,6 +151,7 @@ export class AdminService {
     );
 
     await this.adminRepo.assignPermissionsToRole(roleId, permissionIds);
+    await permissionService.invalidateRoleUsers(roleId);
   }
   async assignRoleToUser(userId: string, data: AssignRoleDTO): Promise<void> {
     const user = await this.adminRepo.findUserById(userId);
@@ -137,8 +162,10 @@ export class AdminService {
     if (!role) {
       throw new AppError("Role not found", 404);
     }
+    ensureRoleIsAssignable(role);
     try {
       await this.adminRepo.assignRoleToUser(userId, data.roleId);
+      await permissionService.invalidateUserPermissions(userId);
     } catch (error) {
       if (
         error instanceof Prisma.PrismaClientKnownRequestError &&
@@ -158,6 +185,7 @@ export class AdminService {
     }
 
     await this.adminRepo.removeRoleFromUser(userId, data.roleId);
+    await permissionService.invalidateUserPermissions(userId);
   }
 
   async replaceRolePermissions(
@@ -175,5 +203,7 @@ export class AdminService {
       data.permissions,
     );
     await this.adminRepo.replaceRolePermissions(roleId, permissionIds);
+    await permissionService.invalidateRoleUsers(roleId);
+
   }
 }

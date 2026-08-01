@@ -1,0 +1,1199 @@
+Directory structure:
+└── admin/
+    ├── admin.container.ts
+    ├── admin.controller.ts
+    ├── admin.guard.ts
+    ├── admin.interface.ts
+    ├── admin.mapper.ts
+    ├── admin.repository.ts
+    ├── admin.response.ts
+    ├── admin.route.ts
+    ├── admin.schema.ts
+    ├── admin.select.ts
+    ├── admin.service.ts
+    └── admin.types.ts
+
+================================================
+FILE: admin.container.ts
+================================================
+import { AdminRepository } from "./admin.repository";
+import { AdminService } from "./admin.service";
+
+const adminRepository = new AdminRepository();
+const adminService = new AdminService(adminRepository);
+
+export { adminService };
+
+
+
+================================================
+FILE: admin.controller.ts
+================================================
+import { asyncHandler } from "@/common/middleware/async-handler";
+import { Request, Response } from "express";
+import { adminService } from "./admin.container";
+import { sendResponse } from "@/common/utils/send-response";
+import { PaginationDTO } from "@/common/schema/pagination.schema";
+
+export const getAllUsersController = asyncHandler(
+  async (req: Request, res: Response) => {
+    const query = req.query as unknown as PaginationDTO;
+
+    const result = await adminService.getAllUsers(query);
+    sendResponse(res, 200, {
+      success: true,
+      message: "All users fetched successfully",
+      data: result,
+      meta: {
+        pagination: result.pagination,
+      },
+    });
+  },
+);
+
+export const getUserByIdController = asyncHandler(
+  async (req: Request, res: Response) => {
+    const result = await adminService.getUserById(req.params.userId as string);
+
+    sendResponse(res, 200, {
+      success: true,
+      message: "User fetched successfully",
+      data: result,
+    });
+  },
+);
+export const getAllRolesController = asyncHandler(
+  async (req: Request, res: Response) => {
+    const query = req.query as unknown as PaginationDTO;
+    const result = await adminService.getAllRoles(query);
+
+    sendResponse(res, 200, {
+      success: true,
+      message: "Roles fetched successfully",
+      data: result,
+      meta: {
+        pagination: result.pagination,
+      },
+    });
+  },
+);
+export const getRoleByIdController = asyncHandler(
+  async (req: Request, res: Response) => {
+    const result = await adminService.getRoleById(req.params.roleId as string);
+
+    sendResponse(res, 200, {
+      success: true,
+      message: "Role fetched successfully",
+      data: result,
+    });
+  },
+);
+
+export const createRoleController = asyncHandler(
+  async (req: Request, res: Response) => {
+    const result = await adminService.createRole(req.body);
+
+    sendResponse(res, 201, {
+      success: true,
+      message: "Role created successfully",
+      data: result,
+    });
+  },
+);
+export const updateRoleController = asyncHandler(
+  async (req: Request, res: Response) => {
+    const result = await adminService.updateRole(
+      req.params.roleId as string,
+      req.body,
+    );
+
+    sendResponse(res, 200, {
+      success: true,
+      message: "Role updated successfully",
+      data: result,
+    });
+  },
+);
+export const deleteRoleController = asyncHandler(
+  async (req: Request, res: Response) => {
+    await adminService.deleteRole(req.params.roleId as string);
+
+    sendResponse(res, 200, {
+      success: true,
+      message: "Role deleted successfully",
+      data: null,
+    });
+  },
+);
+
+export const assignPermissionsController = asyncHandler(
+  async (req: Request, res: Response) => {
+    await adminService.assignPermissionsToRole(
+      req.params.roleId as string,
+      req.body,
+    );
+
+    sendResponse(res, 200, {
+      success: true,
+      message: "Permissions assigned successfully",
+      data: null,
+    });
+  },
+);
+
+export const assignRoleToUserController = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { userId } = req.params;
+
+    await adminService.assignRoleToUser(userId as string, req.body);
+
+    sendResponse(res, 200, {
+      success: true,
+      message: "Role assigned successfully",
+      data: null,
+    });
+  },
+);
+
+export const removeRoleFromUserController = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { userId } = req.params;
+
+    await adminService.removeRoleFromUser(userId as string, req.body);
+
+    sendResponse(res, 200, {
+      success: true,
+      message: "Role removed successfully",
+      data: null,
+    });
+  },
+);
+export const replaceRolePermissionsController = asyncHandler(
+  async (req, res) => {
+    await adminService.replaceRolePermissions(
+      req.params.roleId as string,
+      req.body,
+    );
+
+    sendResponse(res, 200, {
+      success: true,
+      message: "Role permissions updated successfully",
+      data: null,
+    });
+  },
+);
+
+
+
+================================================
+FILE: admin.guard.ts
+================================================
+import { AppError } from "@/common/errors/app-error";
+
+const ensureImmutable = (role: { isSystem: boolean }, message: string) => {
+  if (role.isSystem) {
+    throw new AppError(message, 403);
+  }
+};
+export const ensureRoleIsEditable = (role: { isSystem: boolean }) =>
+  ensureImmutable(role, "System roles cannot be modified");
+
+export const ensureRoleIsDeletable = (role: { isSystem: boolean }) =>
+  ensureImmutable(role, "System roles cannot be deleted");
+
+export const ensureRoleIsAssignable = (role: { isSystem: boolean }) =>
+  ensureImmutable(role, "System roles cannot be assigned");
+
+
+
+================================================
+FILE: admin.interface.ts
+================================================
+import { Role, UserRole } from "@/generated/prisma/client";
+import { Permission as PermissionModel } from "@/generated/prisma/client";
+import {
+  AdminUserType,
+  CreateRoleData,
+  CursorPaginationResult,
+  GetRoleByIdType,
+  RoleListType,
+  UpdateRoleData,
+} from "./admin.types";
+import { Permission } from "@/common/constants/permissions";
+
+export interface IAdminRepository {
+  getAllUsers(
+    cursor?: string,
+    limit?: number,
+  ): Promise<CursorPaginationResult<AdminUserType>>;
+
+  findUserById(userId: string): Promise<AdminUserType | null>;
+
+  getAllRoles(
+    cursor?: string,
+    limit?: number,
+  ): Promise<CursorPaginationResult<RoleListType>>;
+  getRoleById(roleId: string): Promise<GetRoleByIdType | null>;
+  findRoleByName(name: string): Promise<Role | null>;
+
+  createRole(data: CreateRoleData): Promise<Role>;
+  updateRole(roleId: string, data: UpdateRoleData): Promise<Role>;
+  deleteRole(roleId: string): Promise<void>;
+
+  assignPermissionsToRole(
+    roleId: string,
+    permissionIds: string[],
+  ): Promise<void>;
+
+  replaceRolePermissions(
+    roleId: string,
+    permissionIds: string[],
+  ): Promise<void>;
+
+  findPermissionsByNames(names: Permission[]): Promise<PermissionModel[]>;
+
+  assignRoleToUser(userId: string, roleId: string): Promise<UserRole>;
+
+  removeRoleFromUser(userId: string, roleId: string): Promise<void>;
+
+}
+
+
+
+================================================
+FILE: admin.mapper.ts
+================================================
+import { AdminUserDTO, AdminUserType, CursorPaginationResult, GetRoleByIdType, RoleListType } from "./admin.types";
+import {
+  PermissionResponseDTO,
+  RoleDetailsResponseDTO,
+  RoleListResponseDTO,
+  RoleResponseDTO,
+  UserRoleResponseDTO,
+} from "./admin.response";
+import { Role } from "@/generated/prisma/client";
+
+export const toRoleResponse = (role: Role): RoleResponseDTO => ({
+  id: role.id,
+  name: role.name,
+  isSystem: role.isSystem,
+  createdAt: role.createdAt,
+});
+
+export const toUserResponse = (user: AdminUserType): AdminUserDTO => ({
+  id: user.id,
+  email: user.email,
+  authProvider: user.authProvider,
+  isEmailVerified: user.isEmailVerified,
+  createdAt: user.createdAt,
+});
+
+export const toPermissionResponse = (permission: {
+  id: string;
+  name: string;
+}): PermissionResponseDTO => ({
+  id: permission.id,
+  name: permission.name,
+});
+
+export const toUserRoleResponse = (
+  userRole: GetRoleByIdType["userRoles"][number],
+): UserRoleResponseDTO => ({
+  id: userRole.user.id,
+  email: userRole.user.email,
+  assignedAt: userRole.assignedAt,
+});
+
+export const toRoleDetailsResponse = (
+  role: GetRoleByIdType,
+): RoleDetailsResponseDTO => ({
+  id: role.id,
+  name: role.name,
+  createdAt: role.createdAt,
+  isSystem: role.isSystem,
+
+
+  permissions: role.rolePermissions.map((rp) => ({
+    assignedAt: rp.assignedAt,
+    ...toPermissionResponse(rp.permission),
+  })),
+
+  users: role.userRoles.map(toUserRoleResponse),
+});
+
+export const toRoleListResponse = (
+  role: RoleListType,
+): RoleListResponseDTO => ({
+  id: role.id,
+  name: role.name,
+  isSystem: role.isSystem,
+  createdAt: role.createdAt,
+  userCount: role._count.userRoles,
+  permissionCount: role._count.rolePermissions,
+});
+
+
+export const toCursorPaginationResponse = <T, R>(
+  result: CursorPaginationResult<T>,
+  mapper: (item: T) => R,
+) => ({
+  data: result.data.map(mapper),
+
+  pagination: {
+    nextCursor: result.pagination.nextCursor,
+    hasMore: result.pagination.hasMore,
+    limit: result.pagination.limit,
+  },
+});
+
+
+
+================================================
+FILE: admin.repository.ts
+================================================
+import { IAdminRepository } from "./admin.interface";
+import { prisma } from "@/infrastructure/database";
+import {
+  AdminUserType,
+  CreateRoleData,
+  CursorPaginationResult,
+  GetRoleByIdType,
+  RoleListType,
+  UpdateRoleData,
+} from "./admin.types";
+import { Prisma, Role, UserRole } from "@/generated/prisma/client";
+import { adminRoleSelect, adminUserSelect } from "./admin.select";
+import { Permission as PermissionModel } from "@/generated/prisma/client";
+import { Permission } from "@/common/constants/permissions";
+import { AppError } from "@/common/errors/app-error";
+
+export class AdminRepository implements IAdminRepository {
+  async getAllUsers(
+    cursor?: string,
+    limit = 10,
+  ): Promise<CursorPaginationResult<AdminUserType>> {
+    const users = await prisma.user.findMany({
+      take: limit + 1,
+
+      ...(cursor && {
+        cursor: {
+          id: cursor,
+        },
+        skip: 1,
+      }),
+
+      orderBy: [
+        {
+          createdAt: "desc",
+        },
+        {
+          id: "desc",
+        },
+      ],
+
+      select: adminUserSelect,
+    });
+
+    const hasMore = users.length > limit;
+
+    if (hasMore) {
+      users.pop();
+    }
+
+    return {
+      data: users,
+      pagination: {
+        hasMore,
+        nextCursor: hasMore ? users[users.length - 1].id : null,
+        limit,
+      },
+    };
+  }
+  async findUserById(userId: string): Promise<AdminUserType | null> {
+    return prisma.user.findUnique({
+      where: { id: userId },
+      select: adminUserSelect,
+    });
+  }
+  async getAllRoles(
+    cursor?: string,
+    limit = 10,
+  ): Promise<CursorPaginationResult<RoleListType>> {
+    const roles = await prisma.role.findMany({
+      take: limit + 1,
+
+      ...(cursor && {
+        cursor: {
+          id: cursor,
+        },
+        skip: 1,
+      }),
+
+      orderBy: [
+        {
+          createdAt: "desc",
+        },
+        {
+          id: "desc",
+        },
+      ],
+
+      select: {
+        ...adminRoleSelect,
+
+        _count: {
+          select: {
+            userRoles: true,
+            rolePermissions: true,
+          },
+        },
+      },
+    });
+
+    const hasMore = roles.length > limit;
+
+    if (hasMore) {
+      roles.pop();
+    }
+
+    return {
+      data: roles,
+
+      pagination: {
+        hasMore,
+        nextCursor: hasMore ? roles[roles.length - 1].id : null,
+        limit,
+      },
+    };
+  }
+  async getRoleById(roleId: string): Promise<GetRoleByIdType | null> {
+    return prisma.role.findUnique({
+      where: { id: roleId },
+      select: {
+        ...adminRoleSelect,
+
+        rolePermissions: {
+          select: {
+            assignedAt: true,
+            permission: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
+        userRoles: {
+          select: {
+            assignedAt: true,
+            user: {
+              select: {
+                id: true,
+                email: true,
+                createdAt: true,
+              },
+            },
+          },
+        },
+      },
+    });
+  }
+  async createRole(data: CreateRoleData): Promise<Role> {
+    return prisma.role.create({
+      data: { name: data.name },
+    });
+  }
+  async updateRole(roleId: string, data: UpdateRoleData): Promise<Role> {
+    return  prisma.role.update({
+      where: { id: roleId },
+      data: {
+        ...(data.name && {
+          name: data.name,
+        }),
+      },
+    });
+  }
+  async deleteRole(roleId: string): Promise<void> {
+    await prisma.$transaction(async (tx) => {
+      const assignedUsers = await tx.userRole.count({
+        where: {
+          roleId,
+        },
+      });
+
+      if (assignedUsers > 0) {
+        throw new AppError("Cannot delete role assigned to users", 409);
+      }
+
+      try {
+          await tx.role.delete({
+              where: { id: roleId }
+          });
+      } catch (error) {
+          if (
+              error instanceof Prisma.PrismaClientKnownRequestError &&
+              error.code === "P2025"
+          ) {
+              throw new AppError("Role not found", 404);
+          }
+      
+          throw error;
+      }
+    });
+  }
+  async findRoleByName(name: string): Promise<Role | null> {
+    return prisma.role.findUnique({
+      where: { name },
+    });
+  }
+
+  async assignPermissionsToRole(
+    roleId: string,
+    permissionIds: string[],
+  ): Promise<void> {
+    await prisma.rolePermission.createMany({
+      data: permissionIds.map((permissionId) => ({
+        roleId,
+        permissionId,
+      })),
+      skipDuplicates: true,
+    });
+  }
+  async findPermissionsByNames(
+    names: Permission[],
+  ): Promise<PermissionModel[]> {
+    return await prisma.permission.findMany({
+      where: {
+        name: {
+          in: names,
+        },
+      },
+    });
+  }
+  async assignRoleToUser(userId: string, roleId: string): Promise<UserRole> {
+    return  prisma.userRole.create({
+      data: {
+        userId,
+        roleId,
+      },
+    });
+  }
+
+  async replaceRolePermissions(
+    roleId: string,
+    permissionIds: string[],
+  ): Promise<void> {
+    await prisma.$transaction(async (tx) => {
+      await tx.rolePermission.deleteMany({
+        where: { roleId },
+      });
+      await tx.rolePermission.createMany({
+        data: permissionIds.map((permissionId) => ({
+          roleId,
+          permissionId,
+        })),
+        skipDuplicates: true,
+      });
+    });
+  }
+
+  async removeRoleFromUser(userId: string, roleId: string): Promise<void> {
+    await prisma.$transaction(async (tx) => {
+      const assignment = await tx.userRole.findUnique({
+        where: {
+          userId_roleId: {
+            userId,
+            roleId,
+          },
+        },
+        include: {
+          role: true,
+        },
+      });
+      if (!assignment) {
+        throw new AppError("Role is not assigned to user", 404);
+      }
+
+      if (assignment.role.isSystem) {
+        const adminCount = await tx.userRole.count({
+          where: {
+            roleId: assignment.roleId,
+          },
+        });
+
+        if (adminCount <= 1) {
+          throw new AppError("Cannot remove the last admin", 403);
+        }
+      }
+      await tx.userRole.delete({
+        where: {
+          userId_roleId: {
+            userId,
+            roleId,
+          },
+        },
+      });
+    });
+  }
+}
+
+
+
+================================================
+FILE: admin.response.ts
+================================================
+
+export interface RoleResponseDTO {
+  id:string;
+  name:string;
+  createdAt:Date;
+  isSystem:boolean;
+}
+
+export interface PermissionResponseDTO {
+  id: string;
+  name: string;
+}
+
+export interface UserRoleResponseDTO {
+  id: string;
+  email: string;
+  assignedAt: Date;
+}
+
+export interface RoleDetailsResponseDTO extends RoleResponseDTO {
+  permissions: {
+    id: string;
+    name: string;
+    assignedAt: Date;
+  }[];
+
+  users: UserRoleResponseDTO[];
+}
+
+export interface RoleListResponseDTO {
+  id: string;
+  name: string;
+  createdAt: Date;
+  userCount: number;
+  permissionCount: number;
+  isSystem:boolean
+}
+export interface CursorPaginationResponseDTO<T> {
+  data: T[];
+  pagination: {
+    nextCursor: string | null;
+    hasMore: boolean;
+    limit: number;
+  };
+}
+
+
+
+================================================
+FILE: admin.route.ts
+================================================
+import express from "express";
+import {
+  assignPermissionsController,
+  assignRoleToUserController,
+  createRoleController,
+  deleteRoleController,
+  getAllRolesController,
+  getAllUsersController,
+  getRoleByIdController,
+  getUserByIdController,
+  removeRoleFromUserController,
+  replaceRolePermissionsController,
+  updateRoleController,
+} from "./admin.controller";
+import { authorizePermissions } from "@/common/middleware/authorization.middleware";
+import { PERMISSIONS } from "@/common/constants/permissions";
+import { authenticate } from "@/common/middleware/auth.middleware";
+import { validate } from "@/common/middleware/validate.middleware";
+import {
+  assignPermissionsSchema,
+  assignRoleSchema,
+  createRoleSchema,
+  removeRoleSchema,
+  roleIdSchema,
+  updateRoleSchema,
+  userIdSchema,
+} from "./admin.schema";
+import { paginationSchema } from "@/common/schema/pagination.schema";
+
+const router = express.Router();
+
+router
+  .route("/users")
+  .get(
+    authenticate,
+    authorizePermissions(PERMISSIONS.MANAGE_USERS),
+     validate(paginationSchema, "query"),
+    getAllUsersController,
+  );
+router.route("/users/:userId").get(
+  authenticate,
+  authorizePermissions(PERMISSIONS.MANAGE_USERS),
+  validate(userIdSchema, "params"),
+
+  getUserByIdController,
+);
+router.get(
+  "/roles",
+  authenticate,
+  authorizePermissions(PERMISSIONS.MANAGE_ROLES),
+   validate(paginationSchema,"query"),
+  getAllRolesController,
+);
+router.get(
+  "/roles/:roleId",
+  authenticate,
+  authorizePermissions(PERMISSIONS.MANAGE_ROLES),
+  validate(roleIdSchema, "params"),
+  getRoleByIdController,
+);
+
+router.post(
+  "/roles",
+  authenticate,
+  authorizePermissions(PERMISSIONS.MANAGE_ROLES),
+  validate(createRoleSchema),
+  createRoleController,
+);
+
+router.patch(
+  "/roles/:roleId",
+  authenticate,
+  authorizePermissions(PERMISSIONS.MANAGE_ROLES),
+  validate(roleIdSchema, "params"),
+  validate(updateRoleSchema),
+  updateRoleController,
+);
+
+router.delete(
+  "/roles/:roleId",
+  authenticate,
+  authorizePermissions(PERMISSIONS.MANAGE_ROLES),
+  validate(roleIdSchema, "params"),
+  deleteRoleController,
+);
+
+router.post(
+  "/roles/:roleId/permissions",
+  authenticate,
+  authorizePermissions(PERMISSIONS.MANAGE_ROLES),
+  validate(roleIdSchema, "params"),
+  validate(assignPermissionsSchema),
+  assignPermissionsController,
+);
+
+router.post(
+  "/users/:userId/roles",
+  authenticate,
+  authorizePermissions(PERMISSIONS.MANAGE_ROLES),
+  validate(userIdSchema, "params"),
+  validate(assignRoleSchema),
+  assignRoleToUserController,
+);
+
+router.delete(
+  "/users/:userId/roles",
+  authenticate,
+  authorizePermissions(PERMISSIONS.MANAGE_ROLES),
+  validate(userIdSchema, "params"),
+  validate(removeRoleSchema),
+
+  removeRoleFromUserController,
+);
+
+router.put(
+  "/roles/:roleId/permissions",
+  authenticate,
+  authorizePermissions(PERMISSIONS.MANAGE_ROLES),
+  validate(roleIdSchema, "params"),
+  validate(assignPermissionsSchema),
+  replaceRolePermissionsController,
+);
+export default router;
+
+
+
+================================================
+FILE: admin.schema.ts
+================================================
+import { PERMISSION_VALUES } from "@/common/constants/permissions";
+import { z } from "zod";
+
+export const getRoleByIdSchema = z.object({
+  roleId: z.uuid(),
+});
+
+export const createRoleSchema = z
+  .object({
+    name: z
+      .string()
+      .trim()
+      .min(2, "Role name must be at least 2 characters")
+      .max(50, "Role name cannot exceed 50 characters")
+      .transform((value) => value.toUpperCase()),
+  })
+  .strict();
+
+export const updateRoleSchema = createRoleSchema.partial();
+
+export const roleIdSchema = z.object({
+  roleId: z.uuid("Invalid role id"),
+});
+export const userIdSchema = z.object({
+  userId: z.uuid("Invalid user id"),
+});
+
+export const assignPermissionsSchema = z
+  .object({
+    permissions: z
+      .array(z.enum(PERMISSION_VALUES))
+      .min(1, "At least one permission is required"),
+  })
+  .strict();
+
+export const assignRoleSchema = z
+  .object({
+    roleId: z.uuid(),
+  })
+  .strict();
+export const removeRoleSchema = z
+  .object({
+    roleId: z.uuid(),
+  })
+  .strict();
+
+export type CreateRoleDTO = z.infer<typeof createRoleSchema>;
+export type UpdateRoleDTO = z.infer<typeof updateRoleSchema>;
+export type AssignPermissionsDTO = z.infer<typeof assignPermissionsSchema>;
+
+export type AssignRoleDTO = z.infer<typeof assignRoleSchema>;
+export type RemoveRoleDTO = z.infer<typeof removeRoleSchema>;
+
+
+
+================================================
+FILE: admin.select.ts
+================================================
+import { Prisma } from "@/generated/prisma/client";
+
+export const adminUserSelect = {
+  id: true,
+  email: true,
+  authProvider: true,
+  isEmailVerified: true,
+  createdAt: true,
+} satisfies Prisma.UserSelect;
+export const adminRoleSelect = {
+  id: true,
+  name: true,
+  createdAt: true,
+  isSystem: true,
+} satisfies Prisma.RoleSelect;
+
+
+
+================================================
+FILE: admin.service.ts
+================================================
+import { AppError } from "@/common/errors/app-error";
+import { IAdminRepository } from "./admin.interface";
+import {
+  AdminUserDTO,
+  CursorPaginationResult,
+} from "./admin.types";
+import { Prisma } from "@/generated/prisma/client";
+import {
+  toCursorPaginationResponse,
+  toRoleDetailsResponse,
+  toRoleListResponse,
+  toRoleResponse,
+  toUserResponse,
+} from "./admin.mapper";
+import {
+  AssignPermissionsDTO,
+  AssignRoleDTO,
+  CreateRoleDTO,
+  RemoveRoleDTO,
+  UpdateRoleDTO,
+} from "./admin.schema";
+import { RoleDetailsResponseDTO, RoleListResponseDTO, RoleResponseDTO } from "./admin.response";
+import { PaginationDTO } from "@/common/schema/pagination.schema";
+import {
+  ensureRoleIsAssignable,
+  ensureRoleIsDeletable,
+  ensureRoleIsEditable,
+} from "./admin.guard";
+
+export class AdminService {
+  constructor(private readonly adminRepo: IAdminRepository) {}
+
+  async getAllUsers(
+    query: PaginationDTO,
+  ): Promise<CursorPaginationResult<AdminUserDTO>> {
+    const users = await this.adminRepo.getAllUsers(query.cursor, query.limit);
+    return toCursorPaginationResponse(
+        users,
+        toUserResponse,
+      );
+  }
+  async getUserById(userId: string): Promise<AdminUserDTO> {
+    const user = await this.adminRepo.findUserById(userId);
+    if (!user) {
+      throw new AppError("User not found", 404);
+    }
+    return toUserResponse(user);
+  }
+
+  async getAllRoles(query:PaginationDTO): Promise<CursorPaginationResult<RoleListResponseDTO>> {
+    const result = await this.adminRepo.getAllRoles(query.cursor, query.limit);
+    return toCursorPaginationResponse(
+     result,
+     toRoleListResponse
+    );
+  }
+
+  async getRoleById(roleId: string): Promise<RoleDetailsResponseDTO> {
+    const role = await this.adminRepo.getRoleById(roleId);
+    if (!role) throw new AppError("Role not found", 404);
+    return toRoleDetailsResponse(role);
+  }
+
+  async createRole(data: CreateRoleDTO): Promise<RoleResponseDTO> {
+    const existingRole = await this.adminRepo.findRoleByName(data.name);
+    if (existingRole) {
+      throw new AppError("Role already exists", 409);
+    }
+    const role = await this.adminRepo.createRole(data);
+    return toRoleResponse(role);
+  }
+
+  async updateRole(
+    roleId: string,
+    data: UpdateRoleDTO,
+  ): Promise<RoleResponseDTO> {
+    if (!data.name) {
+       throw new AppError("Nothing to update", 400);
+     }
+    const role = await this.adminRepo.getRoleById(roleId);
+    if (!role) {
+      throw new AppError("Role not found", 404);
+    }
+    ensureRoleIsEditable(role);
+    const existingRole = await this.adminRepo.findRoleByName(data.name);
+    if (existingRole && existingRole.id !== roleId) {
+      throw new AppError("Role already exists", 409);
+    }
+
+    const updatedRole = await this.adminRepo.updateRole(roleId, {name:data.name});
+    return toRoleResponse(updatedRole);
+  }
+  async deleteRole(roleId: string): Promise<void> {
+    const role = await this.adminRepo.getRoleById(roleId);
+
+    if (!role) {
+      throw new AppError("Role not found", 404);
+    }
+    ensureRoleIsDeletable(role);
+    await this.adminRepo.deleteRole(roleId);
+  }
+  private async getValidatedPermissionIds(
+    permissions: AssignPermissionsDTO["permissions"],
+  ): Promise<string[]> {
+    const dbPermissions =
+      await this.adminRepo.findPermissionsByNames(permissions);
+
+    if (dbPermissions.length !== permissions.length) {
+      throw new AppError("One or more permissions are invalid", 400);
+    }
+
+    return dbPermissions.map((permission) => permission.id);
+  }
+
+  async assignPermissionsToRole(
+    roleId: string,
+    data: AssignPermissionsDTO,
+  ): Promise<void> {
+    const role = await this.adminRepo.getRoleById(roleId);
+
+    if (!role) {
+      throw new AppError("Role not found", 404);
+    }
+
+    ensureRoleIsEditable(role);
+    const permissionIds = await this.getValidatedPermissionIds(
+      data.permissions,
+    );
+
+    await this.adminRepo.assignPermissionsToRole(roleId, permissionIds);
+  }
+  async assignRoleToUser(userId: string, data: AssignRoleDTO): Promise<void> {
+    const user = await this.adminRepo.findUserById(userId);
+    if (!user) {
+      throw new AppError("User not found", 404);
+    }
+    const role = await this.adminRepo.getRoleById(data.roleId);
+    if (!role) {
+      throw new AppError("Role not found", 404);
+    }
+    ensureRoleIsAssignable(role)
+    try {
+      await this.adminRepo.assignRoleToUser(userId, data.roleId);
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === "P2002"
+      ) {
+        throw new AppError("Role already assigned to user", 409);
+      }
+
+      throw error;
+    }
+  }
+  async removeRoleFromUser(userId: string, data: RemoveRoleDTO): Promise<void> {
+    const user = await this.adminRepo.findUserById(userId);
+
+    if (!user) {
+      throw new AppError("User not found", 404);
+    }
+
+    await this.adminRepo.removeRoleFromUser(userId, data.roleId);
+  }
+
+  async replaceRolePermissions(
+    roleId: string,
+    data: AssignPermissionsDTO,
+  ): Promise<void> {
+    const role = await this.adminRepo.getRoleById(roleId);
+
+    if (!role) {
+      throw new AppError("Role not found", 404);
+    }
+
+    ensureRoleIsEditable(role);
+    const permissionIds = await this.getValidatedPermissionIds(
+      data.permissions,
+    );
+    await this.adminRepo.replaceRolePermissions(roleId, permissionIds);
+  }
+}
+
+
+
+================================================
+FILE: admin.types.ts
+================================================
+import { Permission } from "@/common/constants/permissions";
+import { AuthProvider, Prisma } from "@/generated/prisma/client";
+
+export interface AuthServiceDTO {
+  userId: string;
+  permission: Permission;
+}
+
+export interface AdminUserDTO {
+  id: string;
+  email: string;
+  authProvider: AuthProvider;
+  isEmailVerified: boolean;
+  createdAt: Date;
+}
+
+export type AdminUserType = Prisma.UserGetPayload<{
+  select: {
+    id: true;
+    email: true;
+    authProvider: true;
+    isEmailVerified: true;
+    createdAt: true;
+  };
+}>;
+
+
+
+export type GetRoleByIdType = Prisma.RoleGetPayload<{
+  select: {
+    id: true;
+    name: true;
+    createdAt: true;
+    isSystem: true;
+
+    rolePermissions: {
+      select: {
+        assignedAt: true;
+        permission: {
+          select: {
+            id: true;
+            name: true;
+          };
+        };
+      };
+    };
+
+    userRoles: {
+      select: {
+        assignedAt: true;
+        user: {
+          select: {
+            id: true;
+            email: true;
+            createdAt: true;
+          };
+        };
+      };
+    };
+  };
+}>;
+
+export interface CreateRoleData {
+  name: string;
+}
+
+export interface UpdateRoleData {
+  name?: string;
+}
+
+export interface AssignPermissionsData {
+  permissions: Permission[];
+}
+
+export interface CursorPaginationResult<T> {
+  data: T[];
+  pagination: {
+    nextCursor: string | null;
+    hasMore: boolean;
+    limit: number;
+  };
+}
+
+export type UserRoleWithRoleType = Prisma.UserRoleGetPayload<{
+  include: {
+    role: true;
+  };
+}>;
+
+export type RoleListType = Prisma.RoleGetPayload<{
+  select: {
+    id: true;
+    name: true;
+    createdAt: true;
+    isSystem: true;
+
+    _count: {
+      select: {
+        userRoles: true;
+        rolePermissions: true;
+      };
+    };
+  };
+}>;
+
+
+
+
+

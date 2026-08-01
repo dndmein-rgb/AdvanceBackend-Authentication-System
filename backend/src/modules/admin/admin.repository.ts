@@ -1,5 +1,6 @@
 import { IAdminRepository } from "./admin.interface";
 import { prisma } from "@/infrastructure/database";
+import {  AdminUserType, GetAllRolesType, GetAllUsersType, GetRoleByIdType } from "./admin.types";
 import {
   AdminUserType,
   CreateRoleData,
@@ -8,11 +9,12 @@ import {
   RoleListType,
   UpdateRoleData,
 } from "./admin.types";
-import { Role, UserRole } from "@/generated/prisma/client";
+import { Prisma, Role, UserRole } from "@/generated/prisma/client";
 import { adminRoleSelect, adminUserSelect } from "./admin.select";
 import { Permission as PermissionModel } from "@/generated/prisma/client";
 import { Permission } from "@/common/constants/permissions";
 import { AppError } from "@/common/errors/app-error";
+
 
 export class AdminRepository implements IAdminRepository {
   async getAllUsers(
@@ -151,7 +153,7 @@ export class AdminRepository implements IAdminRepository {
     });
   }
   async updateRole(roleId: string, data: UpdateRoleData): Promise<Role> {
-    return await prisma.role.update({
+    return  prisma.role.update({
       where: { id: roleId },
       data: {
         ...(data.name && {
@@ -162,19 +164,6 @@ export class AdminRepository implements IAdminRepository {
   }
   async deleteRole(roleId: string): Promise<void> {
     await prisma.$transaction(async (tx) => {
-      const role = await tx.role.findUnique({
-        where: {
-          id: roleId,
-        },
-        select: {
-          id: true,
-        },
-      });
-
-      if (!role) {
-        throw new AppError("Role not found", 404);
-      }
-
       const assignedUsers = await tx.userRole.count({
         where: {
           roleId,
@@ -185,11 +174,20 @@ export class AdminRepository implements IAdminRepository {
         throw new AppError("Cannot delete role assigned to users", 409);
       }
 
-      await tx.role.delete({
-        where: {
-          id: roleId,
-        },
-      });
+      try {
+          await tx.role.delete({
+              where: { id: roleId }
+          });
+      } catch (error) {
+          if (
+              error instanceof Prisma.PrismaClientKnownRequestError &&
+              error.code === "P2025"
+          ) {
+              throw new AppError("Role not found", 404);
+          }
+      
+          throw error;
+      }
     });
   }
   async findRoleByName(name: string): Promise<Role | null> {
@@ -222,7 +220,7 @@ export class AdminRepository implements IAdminRepository {
     });
   }
   async assignRoleToUser(userId: string, roleId: string): Promise<UserRole> {
-    return await prisma.userRole.create({
+    return  prisma.userRole.create({
       data: {
         userId,
         roleId,
@@ -286,4 +284,4 @@ export class AdminRepository implements IAdminRepository {
       });
     });
   }
-}
+
