@@ -1,5 +1,5 @@
 export const CACHE_KEYS = {
-  USER_PERMISSIONS: (userId: string) => `permissions :${userId}`,
+  USER_PERMISSIONS: (userId: string) => `permissions:${userId}`,
 } as const;
 
 export const CACHE_TTL = {

@@ -1,3 +1,4 @@
+import {  AuthProvider, Prisma } from "@/generated/prisma/client";
 import { LoginUserDTO, RegisterUserDTO } from "./auth.schema";
 
 export interface CreateSessionDTO {
@@ -54,7 +55,6 @@ export interface CurrentUserDTO {
 }
 
 
-import { Prisma } from "@/generated/prisma/client";
 
 export type UserRoleWithPermissionsType = Prisma.UserRoleGetPayload<{
   select: {
@@ -81,3 +81,15 @@ export interface CurrentUserType {
   email:string;
   createdAt:Date;
 }
+
+export interface CreateAuthAccountDTO{
+  userId: string;
+  provider: AuthProvider;
+  providerAccountId:string
+}
+
+export type AuthAccountWithUserType = Prisma.AuthAccountGetPayload<{
+  include: {
+    user: true;
+  };
+}>;

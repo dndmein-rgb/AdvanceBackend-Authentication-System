@@ -1,7 +1,14 @@
-import type { Session, User } from "@/generated/prisma/client";
+import type {
+  AuthAccount,
+  AuthProvider,
+  Session,
+  User,
+} from "@/generated/prisma/client";
 import { IAuthRepository } from "./auth.interface";
 import { prisma } from "@/infrastructure/database";
 import {
+  AuthAccountWithUserType,
+  CreateAuthAccountDTO,
   CreateSessionDTO,
   CreateUserDTO,
   CurrentUserType,
@@ -102,5 +109,25 @@ export class AuthRepository implements IAuthRepository {
       },
     });
     return userRoles.map((userRole) => userRole.userId);
+  }
+
+  async findAuthAccount(
+    provider: AuthProvider,
+    providerAccountId: string,
+  ): Promise<AuthAccountWithUserType | null> {
+    return prisma.authAccount.findUnique({
+      where: {
+        provider_providerAccountId: {
+          provider,
+          providerAccountId,
+        },
+      },
+      include: { user: true },
+    });
+  }
+  async createAuthAccount(data: CreateAuthAccountDTO): Promise<AuthAccount> {
+    return prisma.authAccount.create({
+      data,
+    });
   }
 }

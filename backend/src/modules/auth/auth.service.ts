@@ -27,7 +27,7 @@ import { Permission } from "@/common/constants/permissions";
 export class AuthService {
   constructor(private readonly authRepo: IAuthRepository) {}
 
-  async createdAuthenticatedSession(
+  async createAuthenticatedSession(
     userId: string,
     ipAddress: string,
     userAgent: string,
@@ -71,7 +71,7 @@ export class AuthService {
       email: data.email,
       passwordHash,
     });
-    const authSession = await this.createdAuthenticatedSession(
+    const authSession = await this.createAuthenticatedSession(
       user.id,
       data.ipAddress,
       data.userAgent,
@@ -101,7 +101,7 @@ export class AuthService {
     if (!isPasswordValid) {
       throw new AppError("Invalid email or password", 401);
     }
-    const authSession = await this.createdAuthenticatedSession(
+    const authSession = await this.createAuthenticatedSession(
       user.id,
       data.ipAddress,
       data.userAgent,

@@ -16,6 +16,9 @@ const envSchema = z.object({
   COOKIE_NAME: z.string(),
   REDIS_HOST: z.string(),
   REDIS_PORT: z.coerce.number(),
+  GOOGLE_CLIENT_ID: z.string(),
+  GOOGLE_CLIENT_SECRET: z.string(),
+  GOOGLE_REDIRECT_URL: z.url(),
 });
 
 export const env = envSchema.parse(process.env);
