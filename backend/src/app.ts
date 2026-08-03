@@ -11,7 +11,7 @@ export const app = express();
 // app.set("trust proxy",1)
 
 app.use(helmet());
-app.use(requestLogger)
+app.use(requestLogger);
 app.use(
   cors({
     origin: true,
@@ -29,18 +29,15 @@ app.get("/health-check", (_, res: Response) => {
   });
 });
 
-import authRouter from "@/modules/auth/auth.route"
-import adminRouter from "@/modules/admin/admin.route"
+import authRouter from "@/modules/auth/auth.route";
+import adminRouter from "@/modules/admin/admin.route";
+import oauthRouter from "@/modules/auth/oauth/oauth.route";
 
-app.use("/api/v1/auth",authRouter)
-app.use("/api/v1/admin",adminRouter)
+app.use("/api/v1/auth", authRouter);
+app.use("/api/v1/admin", adminRouter);
+app.use("/api/v1/oauth", oauthRouter);
 
 app.use((req: Request, _res: Response, next: NextFunction) => {
-  next(
-    new AppError(
-      `Cannot find ${req.originalUrl} on this server`,
-      404
-    ),
-  );
+  next(new AppError(`Cannot find ${req.originalUrl} on this server`, 404));
 });
 app.use(globalErrorHandler);

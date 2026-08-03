@@ -1,7 +1,7 @@
 import { env } from "@/config/env";
 import { OAuth2Client } from "google-auth-library";
 import { AppError } from "../errors/app-error";
-
+console.log(env.GOOGLE_REDIRECT_URL);
 const googleClient = new OAuth2Client(
   env.GOOGLE_CLIENT_ID,
   env.GOOGLE_CLIENT_SECRET,
@@ -13,7 +13,7 @@ export class GoogleService {
     return googleClient.generateAuthUrl({
       access_type: "offline",
       prompt: "consent",
-      scope: ["openId", "email", "profile"],
+      scope: ["openid", "email", "profile"],
       state
     })
   }
@@ -41,3 +41,5 @@ export class GoogleService {
      return payload;
   }
 }
+
+export const googleService=new GoogleService()
