@@ -1,5 +1,7 @@
-import { Session, User } from "@/generated/prisma/client";
+import { AuthAccount, AuthProvider, Session, User } from "@/generated/prisma/client";
 import {
+  AuthAccountWithUserType,
+  CreateAuthAccountDTO,
   CreateSessionDTO,
   CreateUserDTO,
   CurrentUserDTO,
@@ -27,4 +29,8 @@ export interface IAuthRepository {
   getUserPermissions(userId: string): Promise<UserRoleWithPermissionsType[]>;
 
   findUserIdsByRole(roleId: string): Promise<string[]>;
+
+  findAuthAccount(provider: AuthProvider, providerAccountId: string): Promise<AuthAccountWithUserType | null>
+
+  createAuthAccount(data:CreateAuthAccountDTO):Promise<AuthAccount>
 }

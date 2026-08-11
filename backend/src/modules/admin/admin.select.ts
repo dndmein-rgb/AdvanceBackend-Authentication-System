@@ -3,7 +3,6 @@ import { Prisma } from "@/generated/prisma/client";
 export const adminUserSelect = {
   id: true,
   email: true,
-  authProvider: true,
   isEmailVerified: true,
   createdAt: true,
 } satisfies Prisma.UserSelect;

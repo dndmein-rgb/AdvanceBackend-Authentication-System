@@ -26,9 +26,9 @@ export const validate =
         req.params = result.data as ParamsDictionary;
         break;
 
-      case "query":
-        req.query = result.data as Request["query"];
-        break;
+        case "query":
+          Object.assign(req.query, result.data);
+          break;
     }
 
     next();

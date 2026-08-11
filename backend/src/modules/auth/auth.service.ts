@@ -23,11 +23,12 @@ import {
   RefreshTokenResponse,
 } from "./auth.response";
 import { Permission } from "@/common/constants/permissions";
+import { AuthProvider } from "@/generated/prisma/client";
 
 export class AuthService {
   constructor(private readonly authRepo: IAuthRepository) {}
 
-  async createdAuthenticatedSession(
+  async createAuthenticatedSession(
     userId: string,
     ipAddress: string,
     userAgent: string,
@@ -71,7 +72,7 @@ export class AuthService {
       email: data.email,
       passwordHash,
     });
-    const authSession = await this.createdAuthenticatedSession(
+    const authSession = await this.createAuthenticatedSession(
       user.id,
       data.ipAddress,
       data.userAgent,
@@ -101,7 +102,7 @@ export class AuthService {
     if (!isPasswordValid) {
       throw new AppError("Invalid email or password", 401);
     }
-    const authSession = await this.createdAuthenticatedSession(
+    const authSession = await this.createAuthenticatedSession(
       user.id,
       data.ipAddress,
       data.userAgent,
@@ -188,8 +189,6 @@ export class AuthService {
   }
 
   async getUserPermissions(userId: string): Promise<Permission[]> {
-    
-
     const userRoles = await this.authRepo.getUserPermissions(userId);
 
     const permissions = userRoles.flatMap((userRole) =>
@@ -199,5 +198,47 @@ export class AuthService {
     );
 
     return [...new Set(permissions)];
+  }
+
+  async loginWithGoogle(
+    googleId: string,
+    email: string,
+    ipAddress: string,
+    userAgent: string,
+  ): Promise<AuthResponse> {
+    const existingAuthAccount = await this.authRepo.findAuthAccount(
+      AuthProvider.GOOGLE,
+      googleId,
+    );
+    if (existingAuthAccount) {
+      const authSession = await this.createAuthenticatedSession(
+        existingAuthAccount.user.id,
+        ipAddress,
+        userAgent,
+      );
+      return {
+        user: toUserResponse(existingAuthAccount.user),
+        ...authSession,
+      };
+    }
+    let user = await this.authRepo.findUserByEmail(email);
+    if (!user) {
+    user=await this.authRepo.createUser({email,passwordHash:null})
+    }
+
+    await this.authRepo.createAuthAccount({
+      userId: user.id,
+      provider:AuthProvider.GOOGLE,
+      providerAccountId:googleId
+    })
+    const authSession = await this.createAuthenticatedSession(
+       user.id,
+       ipAddress,
+       userAgent,
+     );
+    return {
+        user: toUserResponse(user),
+        ...authSession,
+      };
   }
 }

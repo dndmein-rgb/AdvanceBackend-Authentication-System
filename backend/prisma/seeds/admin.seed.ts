@@ -13,7 +13,6 @@ export const seedAdmin = async (prisma: PrismaClient): Promise<void> => {
     create: {
       email: "admin@example.com",
       passwordHash: await argon2.hash("Admin@123"),
-      authProvider: "EMAIL",
       isEmailVerified: true,
     },
   });

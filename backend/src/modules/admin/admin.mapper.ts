@@ -18,7 +18,6 @@ export const toRoleResponse = (role: Role): RoleResponseDTO => ({
 export const toUserResponse = (user: AdminUserType): AdminUserDTO => ({
   id: user.id,
   email: user.email,
-  authProvider: user.authProvider,
   isEmailVerified: user.isEmailVerified,
   createdAt: user.createdAt,
 });
