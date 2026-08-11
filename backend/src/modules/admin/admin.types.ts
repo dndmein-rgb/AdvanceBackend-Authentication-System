@@ -1,5 +1,5 @@
 import { Permission } from "@/common/constants/permissions";
-import { AuthProvider, Prisma } from "@/generated/prisma/client";
+import { Prisma } from "@/generated/prisma/client";
 
 export interface AuthServiceDTO {
   userId: string;
@@ -9,7 +9,6 @@ export interface AuthServiceDTO {
 export interface AdminUserDTO {
   id: string;
   email: string;
-  authProvider: AuthProvider;
   isEmailVerified: boolean;
   createdAt: Date;
 }
@@ -18,7 +17,6 @@ export type AdminUserType = Prisma.UserGetPayload<{
   select: {
     id: true;
     email: true;
-    authProvider: true;
     isEmailVerified: true;
     createdAt: true;
   };

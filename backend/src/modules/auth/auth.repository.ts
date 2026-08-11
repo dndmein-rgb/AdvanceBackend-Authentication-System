@@ -22,7 +22,6 @@ export class AuthRepository implements IAuthRepository {
       data: {
         email: data.email,
         passwordHash: data.passwordHash,
-        authProvider: "EMAIL",
       },
     });
   }

@@ -33,10 +33,14 @@ export const googleCallbackController = asyncHandler(
     );
 
     clearOAuthStateCookie(res);
-    const result = await googleOAuthService.handleGoogleCallback(code);
+    const result = await googleOAuthService.handleGoogleCallback(
+      code,
+      req.ip as string,
+      req.get("user-agent") ?? "unknown",
+    );
     sendResponse(res, 200, {
       success: true,
-      message: "Google callback received successfully",
+      message: "Google login successfully",
       data: result,
     });
   },
