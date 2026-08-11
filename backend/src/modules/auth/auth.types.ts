@@ -22,7 +22,7 @@ export interface LoginUserServiceDTO extends LoginUserDTO {
 
 export interface CreateUserDTO {
   readonly email: string;
-  readonly passwordHash: string;
+  readonly passwordHash?: string|null;
 }
 
 export interface RefreshTokenPayload {
