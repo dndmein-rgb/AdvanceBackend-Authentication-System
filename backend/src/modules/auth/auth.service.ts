@@ -24,6 +24,7 @@ import {
 } from "./auth.response";
 import { Permission } from "@/common/constants/permissions";
 import { AuthProvider } from "@/generated/prisma/client";
+import { PrismaTransaction } from "./auth.interface";
 
 export class AuthService {
   constructor(private readonly authRepo: IAuthRepository) {}
@@ -32,57 +33,84 @@ export class AuthService {
     userId: string,
     ipAddress: string,
     userAgent: string,
+    tx?: PrismaTransaction,
   ): Promise<AuthTokens> {
     const sessionId = generateSessionId();
-
-    const accessToken = JwtService.signAccessToken({ userId, sessionId });
-    const refreshToken = JwtService.signRefreshToken({ userId, sessionId });
-
-    const refreshTokenHash = TokenService.hashRefreshToken(refreshToken);
-
-    const refreshTokenExpiry = ms(env.JWT_REFRESH_TOKEN_EXPIRY);
-
-    if (typeof refreshTokenExpiry !== "number") {
-      throw new AppError("Invalid refresh token expiry configuration", 500);
-    }
-
-    const expiresAt = new Date(Date.now() + refreshTokenExpiry);
-    await this.authRepo.createSession({
-      id: sessionId,
+  
+    const accessToken = JwtService.signAccessToken({
       userId,
-      expiresAt,
-      refreshTokenHash,
-      ipAddress,
-      userAgent,
+      sessionId,
     });
+  
+    const refreshToken = JwtService.signRefreshToken({
+      userId,
+      sessionId,
+    });
+  
+    const refreshTokenHash = TokenService.hashRefreshToken(refreshToken);
+  
+    const refreshTokenExpiry = ms(env.JWT_REFRESH_TOKEN_EXPIRY);
+  
+    if (typeof refreshTokenExpiry !== "number") {
+      throw new AppError(
+        "Invalid refresh token expiry configuration",
+        500,
+      );
+    }
+  
+    const expiresAt = new Date(Date.now() + refreshTokenExpiry);
+  
+    await this.authRepo.createSession(
+      {
+        id: sessionId,
+        userId,
+        expiresAt,
+        refreshTokenHash,
+        ipAddress,
+        userAgent,
+      },
+      tx,
+    );
+  
     return {
       accessToken,
       refreshToken,
     };
   }
   async register(data: RegisterUserServiceDTO): Promise<AuthResponse> {
-    const existingUser = await this.authRepo.findUserByEmail(data.email);
-
-    if (existingUser) {
-      throw new AppError("User already exists", 400);
-    }
-    const passwordHash = await PasswordService.hash(data.password);
-
-    const user = await this.authRepo.createUser({
-      email: data.email,
-      passwordHash,
+    return this.authRepo.withTransaction(async (tx) => {
+      const existingUser = await this.authRepo.findUserByEmail(
+        data.email,
+        tx,
+      );
+  
+      if (existingUser) {
+        throw new AppError("User already exists", 400);
+      }
+  
+      const passwordHash = await PasswordService.hash(data.password);
+  
+      const user = await this.authRepo.createUser(
+        {
+          email: data.email,
+          passwordHash,
+        },
+        tx,
+      );
+  
+      const authSession = await this.createAuthenticatedSession(
+        user.id,
+        data.ipAddress,
+        data.userAgent,
+        tx,
+      );
+  
+      return {
+        user: toUserResponse(user),
+        ...authSession,
+      };
     });
-    const authSession = await this.createAuthenticatedSession(
-      user.id,
-      data.ipAddress,
-      data.userAgent,
-    );
-    return {
-      user: toUserResponse(user),
-      ...authSession,
-    };
   }
-
   async login(data: LoginUserServiceDTO): Promise<AuthResponse> {
     const user = await this.authRepo.findUserByEmail(data.email);
 
@@ -129,49 +157,60 @@ export class AuthService {
     data: RefreshTokenServiceDTO,
   ): Promise<RefreshTokenResponse> {
     const { refreshToken } = data;
+  
     const jwtPayload = JwtService.verifyRefreshToken(refreshToken);
+  
+  
     const session = await this.authRepo.findActiveSessionById(
       jwtPayload.sessionId,
     );
-
+  
+  
     if (!session) {
       throw new AppError("Session not found", 404);
     }
+  
     if (session.expiresAt.getTime() < Date.now()) {
       throw new AppError("Session has expired", 401);
     }
-
+  
     const isRefreshTokenValid = TokenService.verifyRefreshToken(
       refreshToken,
       session.refreshTokenHash,
     );
-
+    
+  
+  
     if (!isRefreshTokenValid) {
       throw new AppError("Invalid refresh token", 401);
     }
-
+  
     const accessToken = JwtService.signAccessToken({
       userId: jwtPayload.userId,
       sessionId: jwtPayload.sessionId,
     });
-
+  
     const newRefreshToken = JwtService.signRefreshToken({
       userId: jwtPayload.userId,
       sessionId: jwtPayload.sessionId,
     });
-
-    const refreshTokenHash = TokenService.hashRefreshToken(newRefreshToken);
-
+  
+    const refreshTokenHash = TokenService.hashRefreshToken(
+      newRefreshToken,
+    );
+  
     const expiry = ms(env.JWT_REFRESH_TOKEN_EXPIRY);
-
+  
     if (typeof expiry !== "number") {
       throw new AppError("Invalid refresh expiry configuration", 500);
     }
+  
     await this.authRepo.rotateSessionRefreshToken({
       refreshTokenHash,
       expiresAt: new Date(Date.now() + expiry),
       sessionId: jwtPayload.sessionId,
     });
+  
     return {
       accessToken,
       refreshToken: newRefreshToken,
@@ -206,39 +245,62 @@ export class AuthService {
     ipAddress: string,
     userAgent: string,
   ): Promise<AuthResponse> {
-    const existingAuthAccount = await this.authRepo.findAuthAccount(
-      AuthProvider.GOOGLE,
-      googleId,
-    );
+    const existingAuthAccount =
+      await this.authRepo.findAuthAccount(
+        AuthProvider.GOOGLE,
+        googleId,
+      );
+  
     if (existingAuthAccount) {
       const authSession = await this.createAuthenticatedSession(
         existingAuthAccount.user.id,
         ipAddress,
         userAgent,
       );
+  
       return {
         user: toUserResponse(existingAuthAccount.user),
         ...authSession,
       };
     }
-    let user = await this.authRepo.findUserByEmail(email);
-    if (!user) {
-    user=await this.authRepo.createUser({email,passwordHash:null})
-    }
-
-    await this.authRepo.createAuthAccount({
-      userId: user.id,
-      provider:AuthProvider.GOOGLE,
-      providerAccountId:googleId
-    })
-    const authSession = await this.createAuthenticatedSession(
-       user.id,
-       ipAddress,
-       userAgent,
-     );
-    return {
+  
+    return this.authRepo.withTransaction(async (tx) => {
+      let user = await this.authRepo.findUserByEmail(
+        email,
+        tx,
+      );
+  
+      if (!user) {
+        user = await this.authRepo.createUser(
+          {
+            email,
+            passwordHash: null,
+          },
+          tx,
+        );
+      }
+  
+      await this.authRepo.createAuthAccount(
+        {
+          userId: user.id,
+          provider: AuthProvider.GOOGLE,
+          providerAccountId: googleId,
+        },
+        tx,
+      );
+  
+      const authSession =
+        await this.createAuthenticatedSession(
+          user.id,
+          ipAddress,
+          userAgent,
+          tx,
+        );
+  
+      return {
         user: toUserResponse(user),
         ...authSession,
       };
+    });
   }
 }

@@ -1,4 +1,11 @@
-import { AuthAccount, AuthProvider, Session, User } from "@/generated/prisma/client";
+import {
+  AuthAccount,
+  AuthProvider,
+  Prisma,
+  Session,
+  User,
+} from "@/generated/prisma/client";
+
 import {
   AuthAccountWithUserType,
   CreateAuthAccountDTO,
@@ -9,28 +16,63 @@ import {
   UserRoleWithPermissionsType,
 } from "./auth.types";
 
+export type PrismaTransaction = Prisma.TransactionClient;
+
 export interface IAuthRepository {
-  createUser(data: CreateUserDTO): Promise<User>;
+  createUser(
+    data: CreateUserDTO,
+    tx?: PrismaTransaction,
+  ): Promise<User>;
 
-  findUserByEmail(email: string): Promise<User | null>;
+  createAuthAccount(
+    data: CreateAuthAccountDTO,
+    tx?: PrismaTransaction,
+  ): Promise<AuthAccount>;
 
-  createSession(data: CreateSessionDTO): Promise<Session>;
+  findUserByEmail(
+    email: string,
+    tx?: PrismaTransaction,
+  ): Promise<User | null>;
 
-  findActiveSessionById(sessionId: string): Promise<Session | null>;
+  createSession(
+    data: CreateSessionDTO,
+    tx?: PrismaTransaction,
+  ): Promise<Session>;
 
-  rotateSessionRefreshToken(data: RotateSessionDTO): Promise<Session>;
+  withTransaction<T>(
+    callback: (tx: PrismaTransaction) => Promise<T>,
+  ): Promise<T>;
 
-  revokeSession(sessionId: string): Promise<Session>;
+  findActiveSessionById(
+    sessionId: string,
+  ): Promise<Session | null>;
 
-  revokeAllSessions(userId: string): Promise<number>;
+  rotateSessionRefreshToken(
+    data: RotateSessionDTO,
+  ): Promise<Session>;
 
-  findUserById(userId: string): Promise<CurrentUserDTO | null>;
+  revokeSession(
+    sessionId: string,
+  ): Promise<Session>;
 
-  getUserPermissions(userId: string): Promise<UserRoleWithPermissionsType[]>;
+  revokeAllSessions(
+    userId: string,
+  ): Promise<number>;
 
-  findUserIdsByRole(roleId: string): Promise<string[]>;
+  findUserById(
+    userId: string,
+  ): Promise<CurrentUserDTO | null>;
 
-  findAuthAccount(provider: AuthProvider, providerAccountId: string): Promise<AuthAccountWithUserType | null>
+  getUserPermissions(
+    userId: string,
+  ): Promise<UserRoleWithPermissionsType[]>;
 
-  createAuthAccount(data:CreateAuthAccountDTO):Promise<AuthAccount>
+  findUserIdsByRole(
+    roleId: string,
+  ): Promise<string[]>;
+
+  findAuthAccount(
+    provider: AuthProvider,
+    providerAccountId: string,
+  ): Promise<AuthAccountWithUserType | null>;
 }
