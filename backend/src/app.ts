@@ -14,7 +14,7 @@ app.use(helmet());
 app.use(requestLogger);
 app.use(
   cors({
-    origin: true,
+    origin: env.FRONTEND_URL,
     credentials: true,
   }),
 );
@@ -32,6 +32,7 @@ app.get("/health-check", (_, res: Response) => {
 import authRouter from "@/modules/auth/auth.route";
 import adminRouter from "@/modules/admin/admin.route";
 import oauthRouter from "@/modules/auth/oauth/oauth.route";
+import { env } from "./config/env";
 
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/admin", adminRouter);

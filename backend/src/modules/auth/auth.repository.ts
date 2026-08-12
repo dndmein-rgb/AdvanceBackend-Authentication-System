@@ -16,28 +16,49 @@ import {
   UserRoleWithPermissionsType,
 } from "./auth.types";
 
+import { Prisma } from "@/generated/prisma/client";
+export type PrismaTransaction = Prisma.TransactionClient;
+
 export class AuthRepository implements IAuthRepository {
-  async createUser(data: CreateUserDTO): Promise<User> {
-    return await prisma.user.create({
-      data: {
-        email: data.email,
-        passwordHash: data.passwordHash,
-      },
+  async withTransaction<T>(
+    callback: (tx: PrismaTransaction) => Promise<T>,
+  ): Promise<T> {
+    return prisma.$transaction(async (tx) => {
+      return callback(tx);
+    });
+  }
+  async createUser(data: CreateUserDTO, tx?: PrismaTransaction): Promise<User> {
+    const client = tx ?? prisma;
+
+    return client.user.create({
+      data,
     });
   }
 
-  async findUserByEmail(email: string): Promise<User | null> {
-    return await prisma.user.findUnique({
-      where: { email },
+  async findUserByEmail(
+    email: string,
+    tx?: PrismaTransaction,
+  ): Promise<User | null> {
+    const client = tx ?? prisma;
+
+    return client.user.findUnique({
+      where: {
+        email,
+      },
     });
   }
-  async createSession(data: CreateSessionDTO): Promise<Session> {
-    return await prisma.session.create({
+  async createSession(
+    data: CreateSessionDTO,
+    tx?: PrismaTransaction,
+  ): Promise<Session> {
+    const client = tx ?? prisma;
+
+    return client.session.create({
       data,
     });
   }
   async findActiveSessionById(sessionId: string): Promise<Session | null> {
-    return await prisma.session.findUnique({
+    return await prisma.session.findFirst({
       where: { id: sessionId, revokedAt: null },
     });
   }
@@ -51,7 +72,14 @@ export class AuthRepository implements IAuthRepository {
     });
   }
   async revokeSession(sessionId: string): Promise<Session> {
-    return await prisma.session.delete({ where: { id: sessionId } });
+    return prisma.session.update({
+      where: {
+        id: sessionId,
+      },
+      data: {
+        revokedAt: new Date(),
+      },
+    });
   }
   async revokeAllSessions(userId: string): Promise<number> {
     const result = await prisma.session.updateMany({
@@ -124,8 +152,13 @@ export class AuthRepository implements IAuthRepository {
       include: { user: true },
     });
   }
-  async createAuthAccount(data: CreateAuthAccountDTO): Promise<AuthAccount> {
-    return prisma.authAccount.create({
+  async createAuthAccount(
+    data: CreateAuthAccountDTO,
+    tx?: PrismaTransaction,
+  ): Promise<AuthAccount> {
+    const client = tx ?? prisma;
+
+    return client.authAccount.create({
       data,
     });
   }

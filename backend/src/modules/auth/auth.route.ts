@@ -20,7 +20,7 @@ router
 router.route("/login").post(validate(loginUserSchema), loginUserController);
 router.route("/logout").post(logoutUserController);
 router.route("/logout-all").post(authenticate, logoutAllSessionsController);
-router.route("/refresh").post(refreshTokenController);
+router.route("/refresh-token").post(refreshTokenController);
 router.route("/me").get(authenticate, getCurrentUserController);
 
 router

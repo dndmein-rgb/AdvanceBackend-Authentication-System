@@ -49,11 +49,17 @@ export class JwtService {
   }
   static verifyRefreshToken(token: string): RefreshTokenPayload {
     try {
-      return jwt.verify(
+  
+      const decoded = jwt.verify(
         token,
         authConfig.refreshToken.secret,
       ) as RefreshTokenPayload;
-    } catch {
+  
+  
+      return decoded;
+    } catch (error) {
+      console.error("JWT VERIFY FAILED:", error);
+  
       throw new AppError("Invalid or expired refresh token", 401);
     }
   }

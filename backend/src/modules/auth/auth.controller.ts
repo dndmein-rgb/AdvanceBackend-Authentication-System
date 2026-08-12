@@ -50,6 +50,9 @@ export const loginUserController = asyncHandler(
 export const refreshTokenController = asyncHandler(
   async (req: Request, res: Response) => {
     const refreshToken = req.cookies.refreshToken;
+    if (!refreshToken) {
+         throw new AppError("Refresh token is missing", 401);
+       }
     const result = await authService.refreshToken({ refreshToken });
     setRefreshTokenCookie(res, result.refreshToken);
     sendResponse(res, 200, {
@@ -103,6 +106,7 @@ export const logoutAllSessionsController = asyncHandler(
     sendResponse(res, 200, {
       success: true,
       message: "Logged out from all devices successfully",
+      data:null
     });
   },
 );

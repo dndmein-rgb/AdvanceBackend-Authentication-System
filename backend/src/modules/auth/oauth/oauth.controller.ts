@@ -8,6 +8,8 @@ import {
   setOAuthStateCookie,
 } from "@/common/utils/oauth-cookie";
 import { GoogleCallbackDTO } from "./oauth.types";
+import { env } from "@/config/env";
+import { setRefreshTokenCookie } from "@/common/utils/cookie";
 
 export const redirectToGoogleController = asyncHandler(
   async (_req: Request, res: Response) => {
@@ -38,10 +40,7 @@ export const googleCallbackController = asyncHandler(
       req.ip as string,
       req.get("user-agent") ?? "unknown",
     );
-    sendResponse(res, 200, {
-      success: true,
-      message: "Google login successfully",
-      data: result,
-    });
+    setRefreshTokenCookie(res, result.refreshToken);
+    res.redirect(`${env.FRONTEND_URL}/dashboard`);
   },
 );
