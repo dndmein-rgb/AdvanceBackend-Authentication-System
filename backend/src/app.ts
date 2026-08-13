@@ -18,6 +18,7 @@ app.use(
     credentials: true,
   }),
 );
+app.use(globalRateLimiter)
 app.use(express.json({ limit: "10kb" }));
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
@@ -33,6 +34,7 @@ import authRouter from "@/modules/auth/auth.route";
 import adminRouter from "@/modules/admin/admin.route";
 import oauthRouter from "@/modules/auth/oauth/oauth.route";
 import { env } from "./config/env";
+import { globalRateLimiter } from "./common/middleware/rate-limit/rate-limiters";
 
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/admin", adminRouter);
