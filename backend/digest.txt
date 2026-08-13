@@ -1,0 +1,4125 @@
+Directory structure:
+└── backend/
+    ├── package.json
+    ├── prisma.config.ts
+    ├── tsconfig.json
+    ├── .env .sample
+    ├── prisma/
+    │   ├── schema.prisma
+    │   ├── seed.ts
+    │   ├── migrations/
+    │   │   ├── migration_lock.toml
+    │   │   ├── 20260722154105_init/
+    │   │   │   └── migration.sql
+    │   │   ├── 20260728052941_init/
+    │   │   │   └── migration.sql
+    │   │   ├── 20260731043304_init/
+    │   │   │   └── migration.sql
+    │   │   ├── 20260731050951_init/
+    │   │   │   └── migration.sql
+    │   │   ├── 20260802044408_init/
+    │   │   │   └── migration.sql
+    │   │   └── 20260811143355_init/
+    │   │       └── migration.sql
+    │   └── seeds/
+    │       ├── admin.seed.ts
+    │       ├── permissions.seed.ts
+    │       ├── role-permissions.seed.ts
+    │       └── roles.seed.ts
+    └── src/
+        ├── app.ts
+        ├── server.ts
+        ├── common/
+        │   ├── constants/
+        │   │   ├── cache.ts
+        │   │   ├── permissions.ts
+        │   │   └── roles.ts
+        │   ├── errors/
+        │   │   └── app-error.ts
+        │   ├── middleware/
+        │   │   ├── async-handler.ts
+        │   │   ├── auth.middleware.ts
+        │   │   ├── authorization.middleware.ts
+        │   │   ├── error.middleware.ts
+        │   │   ├── request-logger.ts
+        │   │   └── validate.middleware.ts
+        │   ├── schema/
+        │   │   └── pagination.schema.ts
+        │   ├── services/
+        │   │   ├── cache.service.ts
+        │   │   ├── google.service.ts
+        │   │   ├── jwt.services.ts
+        │   │   ├── password.service.ts
+        │   │   ├── permission.service.ts
+        │   │   └── token.service.ts
+        │   ├── types/
+        │   │   ├── express.d.ts
+        │   │   └── index.ts
+        │   └── utils/
+        │       ├── cookie.ts
+        │       ├── oauth-cookie.ts
+        │       └── send-response.ts
+        ├── config/
+        │   ├── env.ts
+        │   └── logger.ts
+        ├── infrastructure/
+        │   └── database/
+        │       ├── index.ts
+        │       ├── prisma.ts
+        │       └── redis.ts
+        └── modules/
+            ├── admin/
+            │   ├── admin.container.ts
+            │   ├── admin.controller.ts
+            │   ├── admin.guard.ts
+            │   ├── admin.interface.ts
+            │   ├── admin.mapper.ts
+            │   ├── admin.repository.ts
+            │   ├── admin.response.ts
+            │   ├── admin.route.ts
+            │   ├── admin.schema.ts
+            │   ├── admin.select.ts
+            │   ├── admin.service.ts
+            │   └── admin.types.ts
+            └── auth/
+                ├── auth.constants.ts
+                ├── auth.container.ts
+                ├── auth.controller.ts
+                ├── auth.interface.ts
+                ├── auth.mapper.ts
+                ├── auth.repository.ts
+                ├── auth.response.ts
+                ├── auth.route.ts
+                ├── auth.schema.ts
+                ├── auth.service.ts
+                ├── auth.types.ts
+                ├── auth.utils.ts
+                ├── index.ts
+                └── oauth/
+                    ├── oauth.container.ts
+                    ├── oauth.controller.ts
+                    ├── oauth.interface.ts
+                    ├── oauth.repository.ts
+                    ├── oauth.route.ts
+                    ├── oauth.schema.ts
+                    ├── oauth.service.ts
+                    ├── oauth.types.ts
+                    └── oauth.utils.ts
+
+================================================
+FILE: package.json
+================================================
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc && tsc-alias",
+    "start": "node dist/server.js",
+    "db:generate": "npx prisma generate",
+    "db:migrate": "npx prisma migrate dev --name init",
+    "db:seed": "prisma db seed"
+  },
+  "db": {
+    "seed": "tsx --tsconfig tsconfig.seed.json prisma/seed.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "@prisma/adapter-pg": "^7.9.0",
+    "@prisma/client": "^7.9.0",
+    "argon2": "^0.45.1",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
+    "google-auth-library": "^11.0.0",
+    "helmet": "^8.3.0",
+    "ioredis": "^6.0.0",
+    "ms": "^2.1.3",
+    "pino": "^10.3.1",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/cookie-parser": "^1.4.10",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/ms": "^2.1.0",
+    "@types/node": "^26.1.1",
+    "@types/pg": "^8.20.0",
+    "dotenv": "^17.4.2",
+    "eslint": "^10.7.0",
+    "jsonwebtoken": "^9.0.3",
+    "nodemon": "^3.1.14",
+    "pino-http": "^11.0.0",
+    "pino-pretty": "^13.1.3",
+    "prettier": "^3.9.6",
+    "prisma": "^7.9.0",
+    "tsc-alias": "^1.9.1",
+    "tsx": "^4.23.1",
+    "typescript": "^7.0.2"
+  }
+}
+
+
+
+================================================
+FILE: prisma.config.ts
+================================================
+// This file was generated by Prisma, and assumes you have installed the following:
+// npm install --save-dev prisma dotenv
+//
+import "dotenv/config";
+import { defineConfig, env } from "@prisma/config";
+
+export default defineConfig({
+  schema: "prisma/schema.prisma",
+  migrations: {
+    path: "prisma/migrations",
+    seed:"tsx prisma/seed.ts"
+  },
+  datasource: {
+    url: env("DATABASE_URL"),
+  },
+});
+
+
+
+================================================
+FILE: tsconfig.json
+================================================
+{
+  "compilerOptions": {
+    "target": "ES2023",
+
+    "module": "esnext",
+    "types": ["node"],
+
+    "moduleResolution": "bundler",
+
+    "outDir": "./dist",
+
+    "rootDir": ".",
+
+    "baseUrl": ".",
+    "paths": {
+      "@/*":["src/*"]
+    },
+
+    "strict": true,
+
+    "esModuleInterop": true,
+
+    "forceConsistentCasingInFileNames": true,
+
+    "skipLibCheck": true,
+
+    "noImplicitAny": true,
+
+    "noUnusedLocals": true,
+
+    "noUnusedParameters": true,
+
+    "exactOptionalPropertyTypes": true,
+  },
+
+  "include": ["src","prisma"],
+}
+
+
+
+================================================
+FILE: .env .sample
+================================================
+NODE_ENV="development"
+PORT=4000
+FRONTEND_URL=http://localhost:3000
+DATABASE_URL=
+
+JWT_ACCESS_TOKEN_SECRET=
+JWT_ACCESS_TOKEN_EXPIRY=15m
+
+JWT_REFRESH_TOKEN_SECRET=
+JWT_REFRESH_TOKEN_EXPIRY=30d
+
+COOKIE_NAME=refreshToken
+
+REDIS_HOST=localhost
+REDIS_PORT=6379
+
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+GOOGLE_REDIRECT_URL=
+
+
+================================================
+FILE: prisma/schema.prisma
+================================================
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+   output   = "../src/generated/prisma"
+
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum AuthProvider{
+EMAIL
+GOOGLE
+}
+
+model User{
+  id   String @id @default(uuid())
+  email String  @unique
+  passwordHash String?
+  isEmailVerified Boolean @default(false)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  sessions   Session[]
+  userRoles  UserRole[]
+
+  authAccounts     AuthAccount[]
+
+  @@index([createdAt,id])
+}
+model AuthAccount{
+id            String            @id @default(uuid())
+userId        String
+provider      AuthProvider
+providerAccountId       String
+createdAt      DateTime         @default(now())
+
+user           User        @relation(fields:[userId],references:[id],onDelete: Cascade)
+
+@@unique([provider, providerAccountId])
+@@index([userId])
+}
+model Session{
+id          String         @id  @default(uuid())
+userId      String
+user        User   @relation(fields:[userId],references: [id],onDelete:Cascade)
+refreshTokenHash    String
+userAgent    String?
+ipAddress    String?
+expiresAt    DateTime
+revokedAt    DateTime?
+createdAt    DateTime    @default(now())
+updatedAt    DateTime    @updatedAt
+
+@@index([userId])
+@@index([expiresAt])
+}
+
+model Role{
+id           String         @id @default(uuid())
+name         String         @unique
+isSystem   Boolean          @default(false)
+
+createdAt    DateTime       @default(now())
+
+userRoles       UserRole[]
+rolePermissions  RolePermission[]
+
+@@index([createdAt,id])
+}
+
+
+
+
+
+
+model Permission{
+id           String         @id @default(uuid())
+name         String         @unique
+createdAt    DateTime       @default(now())
+
+rolePermissions     RolePermission[]
+}
+
+model UserRole{
+userId      String
+roleId      String
+assignedAt DateTime @default(now())
+
+user    User    @relation(fields:[userId],references:[id] , onDelete:Cascade)
+role    Role    @relation(fields:[roleId],references:[id],onDelete:Cascade)
+
+@@id([userId,roleId])
+
+@@index([userId])
+@@index([roleId])
+}
+
+
+model RolePermission{
+roleId            String
+permissionId      String
+
+assignedAt        DateTime  @default(now())
+
+role              Role          @relation(fields:[roleId],references:[id],onDelete:Cascade)
+permission        Permission    @relation(fields:[permissionId],references:[id],onDelete:Cascade)
+
+@@id([roleId,permissionId])
+
+@@index([roleId])
+@@index([permissionId])
+}
+
+
+
+================================================
+FILE: prisma/seed.ts
+================================================
+import {prisma} from "../src/infrastructure/database/index"
+import { seedRoles } from "./seeds/roles.seed";
+import { seedPermissions } from "./seeds/permissions.seed";
+import { seedRolePermissions } from "./seeds/role-permissions.seed";
+import { seedAdmin } from "./seeds/admin.seed";
+
+
+async function main() {
+  console.log("ðŸŒ± Seeding database...");
+
+  await seedRoles(prisma);
+  console.log("âœ“ Roles seeded");
+
+  await seedPermissions(prisma);
+  console.log("âœ“ Permissions seeded");
+
+  await seedRolePermissions(prisma);
+  console.log("âœ“ Role permissions seeded");
+
+  await seedAdmin(prisma);
+  console.log("âœ“ Admin user seeded");
+
+  console.log("ðŸŽ‰ Database seeded successfully.");
+}
+
+main()
+  .catch((error) => {
+    console.error(error);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });
+
+
+================================================
+FILE: prisma/migrations/migration_lock.toml
+================================================
+# Please do not edit this file manually
+# It should be added in your version-control system (e.g., Git)
+provider = "postgresql"
+
+
+
+================================================
+FILE: prisma/migrations/20260722154105_init/migration.sql
+================================================
+-- CreateEnum
+CREATE TYPE "AuthProvider" AS ENUM ('EMAIL', 'GOOGLE');
+
+-- CreateTable
+CREATE TABLE "User" (
+    "id" TEXT NOT NULL,
+    "email" TEXT NOT NULL,
+    "passwordHash" TEXT,
+    "isEmailVerified" BOOLEAN NOT NULL DEFAULT false,
+    "authProvider" "AuthProvider" NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "User_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Session" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "refreshTokenHash" TEXT NOT NULL,
+    "userAgent" TEXT,
+    "ipAddress" TEXT,
+    "expiresAt" TIMESTAMP(3) NOT NULL,
+    "revokedAt" TIMESTAMP(3),
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Session_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Role" (
+    "id" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "Role_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Permission" (
+    "id" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "Permission_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "UserRole" (
+    "userId" TEXT NOT NULL,
+    "roleId" TEXT NOT NULL,
+
+    CONSTRAINT "UserRole_pkey" PRIMARY KEY ("userId","roleId")
+);
+
+-- CreateTable
+CREATE TABLE "RolePermission" (
+    "roleId" TEXT NOT NULL,
+    "permissionId" TEXT NOT NULL,
+    "assignedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "RolePermission_pkey" PRIMARY KEY ("roleId","permissionId")
+);
+
+-- CreateIndex
+CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
+
+-- CreateIndex
+CREATE INDEX "User_email_idx" ON "User"("email");
+
+-- CreateIndex
+CREATE INDEX "Session_userId_idx" ON "Session"("userId");
+
+-- CreateIndex
+CREATE INDEX "Session_expiresAt_idx" ON "Session"("expiresAt");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Role_name_key" ON "Role"("name");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Permission_name_key" ON "Permission"("name");
+
+-- AddForeignKey
+ALTER TABLE "Session" ADD CONSTRAINT "Session_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "UserRole" ADD CONSTRAINT "UserRole_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "UserRole" ADD CONSTRAINT "UserRole_roleId_fkey" FOREIGN KEY ("roleId") REFERENCES "Role"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "RolePermission" ADD CONSTRAINT "RolePermission_roleId_fkey" FOREIGN KEY ("roleId") REFERENCES "Role"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "RolePermission" ADD CONSTRAINT "RolePermission_permissionId_fkey" FOREIGN KEY ("permissionId") REFERENCES "Permission"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+
+
+================================================
+FILE: prisma/migrations/20260728052941_init/migration.sql
+================================================
+-- DropIndex
+DROP INDEX "User_email_idx";
+
+-- AlterTable
+ALTER TABLE "RolePermission" ALTER COLUMN "assignedAt" SET DEFAULT CURRENT_TIMESTAMP;
+
+-- AlterTable
+ALTER TABLE "UserRole" ADD COLUMN     "assignedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP;
+
+
+
+================================================
+FILE: prisma/migrations/20260731043304_init/migration.sql
+================================================
+-- AlterTable
+ALTER TABLE "Role" ADD COLUMN     "isSystem" BOOLEAN NOT NULL DEFAULT false;
+
+
+
+================================================
+FILE: prisma/migrations/20260731050951_init/migration.sql
+================================================
+-- CreateIndex
+CREATE INDEX "Role_createdAt_id_idx" ON "Role"("createdAt", "id");
+
+-- CreateIndex
+CREATE INDEX "RolePermission_roleId_idx" ON "RolePermission"("roleId");
+
+-- CreateIndex
+CREATE INDEX "RolePermission_permissionId_idx" ON "RolePermission"("permissionId");
+
+-- CreateIndex
+CREATE INDEX "User_createdAt_id_idx" ON "User"("createdAt", "id");
+
+-- CreateIndex
+CREATE INDEX "UserRole_userId_idx" ON "UserRole"("userId");
+
+-- CreateIndex
+CREATE INDEX "UserRole_roleId_idx" ON "UserRole"("roleId");
+
+
+
+================================================
+FILE: prisma/migrations/20260802044408_init/migration.sql
+================================================
+-- CreateTable
+CREATE TABLE "AuthAccount" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "provider" "AuthProvider" NOT NULL,
+    "providerAccountId" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "AuthAccount_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateIndex
+CREATE INDEX "AuthAccount_userId_idx" ON "AuthAccount"("userId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "AuthAccount_provider_providerAccountId_key" ON "AuthAccount"("provider", "providerAccountId");
+
+-- AddForeignKey
+ALTER TABLE "AuthAccount" ADD CONSTRAINT "AuthAccount_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+
+
+================================================
+FILE: prisma/migrations/20260811143355_init/migration.sql
+================================================
+/*
+  Warnings:
+
+  - You are about to drop the column `authProvider` on the `User` table. All the data in the column will be lost.
+
+*/
+-- AlterTable
+ALTER TABLE "User" DROP COLUMN "authProvider";
+
+
+
+================================================
+FILE: prisma/seeds/admin.seed.ts
+================================================
+import argon2 from "argon2";
+
+import { PrismaClient } from "../../src/generated/prisma/client";
+
+import { SYSTEM_ROLES } from "../../src/common/constants/roles";
+
+export const seedAdmin = async (prisma: PrismaClient): Promise<void> => {
+  const admin = await prisma.user.upsert({
+    where: {
+      email: "admin@example.com",
+    },
+    update: {},
+    create: {
+      email: "admin@example.com",
+      passwordHash: await argon2.hash("Admin@123"),
+      isEmailVerified: true,
+    },
+  });
+
+  const adminRole = await prisma.role.findUnique({
+    where: {
+      name: SYSTEM_ROLES.ADMIN,
+    },
+    select: {
+      id: true,
+      isSystem: true,
+    },
+  });
+
+  if (!adminRole) {
+    throw new Error("Admin role not found.");
+  }
+
+  await prisma.userRole.upsert({
+    where: {
+      userId_roleId: {
+        userId: admin.id,
+        roleId: adminRole.id,
+      },
+    },
+    update: {},
+    create: {
+      userId: admin.id,
+      roleId: adminRole.id,
+    },
+  });
+};
+
+
+
+================================================
+FILE: prisma/seeds/permissions.seed.ts
+================================================
+import { PrismaClient } from "../../src/generated/prisma/client";
+import { PERMISSIONS } from "../../src/common/constants/permissions";
+
+export const seedPermissions = async (prisma: PrismaClient): Promise<void> => {
+  await prisma.permission.createMany({
+    data: Object.values(PERMISSIONS).map((name) => ({
+      name,
+    })),
+    skipDuplicates: true,
+  });
+};
+
+
+
+================================================
+FILE: prisma/seeds/role-permissions.seed.ts
+================================================
+import { PrismaClient } from "../../src/generated/prisma/client";
+import { PERMISSIONS } from "../../src/common/constants/permissions";
+import { SYSTEM_ROLES } from "../../src/common/constants/roles";
+
+export const seedRolePermissions = async (
+  prisma: PrismaClient,
+): Promise<void> => {
+  const roles = await prisma.role.findMany({
+    select: {
+      id: true,
+      name: true,
+    },
+  });
+  const permissions = await prisma.permission.findMany({
+    select: {
+      id: true,
+      name: true,
+    },
+  });
+  const roleMap = new Map(roles.map((role) => [role.name, role.id]));
+
+  const permissionMap = new Map(
+    permissions.map((permission) => [permission.name, permission.id]),
+  );
+  const mappings = [
+    // USER
+    {
+      role: SYSTEM_ROLES.USER,
+      permissions: [
+        PERMISSIONS.CREATE_ORDER,
+        PERMISSIONS.VIEW_ORDER,
+        PERMISSIONS.CANCEL_ORDER,
+      ],
+    },
+
+    // SELLER
+    {
+      role: SYSTEM_ROLES.SELLER,
+      permissions: [
+        PERMISSIONS.CREATE_PRODUCT,
+        PERMISSIONS.UPDATE_PRODUCT,
+        PERMISSIONS.DELETE_PRODUCT,
+        PERMISSIONS.VIEW_PRODUCT,
+      ],
+    },
+
+    // ADMIN
+    {
+      role: SYSTEM_ROLES.ADMIN,
+      permissions: Object.values(PERMISSIONS),
+    },
+
+    // SUPER ADMIN
+    {
+      role: SYSTEM_ROLES.SUPER_ADMIN,
+      permissions: Object.values(PERMISSIONS),
+    },
+  ];
+
+  const data = mappings.flatMap(({ role, permissions }) => {
+    const roleId = roleMap.get(role);
+
+    if (!roleId) {
+      throw new Error(`Role '${role}' not found.`);
+    }
+
+    return permissions.map((permission) => {
+      const permissionId = permissionMap.get(permission);
+
+      if (!permissionId) {
+        throw new Error(`Permission '${permission}' not found.`);
+      }
+
+      return {
+        roleId,
+        permissionId,
+        assignedAt: new Date(),
+      };
+    });
+  });
+
+  await prisma.rolePermission.createMany({
+    data,
+    skipDuplicates: true,
+  });
+};
+
+
+
+================================================
+FILE: prisma/seeds/roles.seed.ts
+================================================
+import { PrismaClient } from "../../src/generated/prisma/client";
+import { SYSTEM_ROLES } from "../../src/common/constants/roles";
+
+export const seedRoles = async (
+  prisma: PrismaClient,
+): Promise<void> => {
+  const roles = [
+    {
+      name: SYSTEM_ROLES.USER,
+      isSystem: false,
+    },
+    {
+      name: SYSTEM_ROLES.SELLER,
+      isSystem: false,
+    },
+    {
+      name: SYSTEM_ROLES.ADMIN,
+      isSystem: true,
+    },
+    {
+      name: SYSTEM_ROLES.SUPER_ADMIN,
+      isSystem: true,
+    },
+  ];
+
+  for (const role of roles) {
+    await prisma.role.upsert({
+      where: {
+        name: role.name,
+      },
+      update: {
+        isSystem: role.isSystem,
+      },
+      create: role,
+    });
+  }
+};
+
+
+================================================
+FILE: src/app.ts
+================================================
+import express, { NextFunction, Request, Response } from "express";
+import helmet from "helmet";
+import cors from "cors";
+import cookieParser from "cookie-parser";
+import { globalErrorHandler } from "@/common/middleware/error.middleware.js";
+import { AppError } from "@/common/errors/app-error.js";
+import { requestLogger } from "@/common/middleware/request-logger";
+
+export const app = express();
+
+// app.set("trust proxy",1)
+
+app.use(helmet());
+app.use(requestLogger);
+app.use(
+  cors({
+    origin: env.FRONTEND_URL,
+    credentials: true,
+  }),
+);
+app.use(express.json({ limit: "10kb" }));
+app.use(cookieParser());
+app.use(express.urlencoded({ extended: true }));
+
+app.get("/health-check", (_, res: Response) => {
+  res.status(200).json({
+    status: "ok",
+    message: "App is working fine",
+  });
+});
+
+import authRouter from "@/modules/auth/auth.route";
+import adminRouter from "@/modules/admin/admin.route";
+import oauthRouter from "@/modules/auth/oauth/oauth.route";
+import { env } from "./config/env";
+
+app.use("/api/v1/auth", authRouter);
+app.use("/api/v1/admin", adminRouter);
+app.use("/api/v1/oauth", oauthRouter);
+
+app.use((req: Request, _res: Response, next: NextFunction) => {
+  next(new AppError(`Cannot find ${req.originalUrl} on this server`, 404));
+});
+app.use(globalErrorHandler);
+
+
+
+================================================
+FILE: src/server.ts
+================================================
+import { app } from "@/app.js";
+import { env } from "@/config/env.js";
+import { logger } from "@/config/logger.js";
+import { prisma } from "@/infrastructure/database/index.js";
+import { Server } from "node:http";
+
+let isShuttingDown = false;
+const shutDown = async (signal: string, server: Server): Promise<void> => {
+  if (isShuttingDown) {
+    return;
+  }
+  isShuttingDown = true;
+  logger.info(`${signal} received. Shutting down...`);
+  const forceShutdownTimeout = setTimeout(() => {
+    logger.error("Graceful shutdown timed out. Forcing exit.");
+    process.exit(1);
+  }, 10_000);
+  forceShutdownTimeout.unref();
+
+  try {
+    await prisma.$disconnect();
+    logger.info("Database disconnected");
+  } catch (error) {
+    logger.error(error, "Failed to disconnect Prisma");
+  }
+
+  server.close(() => {
+    clearTimeout(forceShutdownTimeout)
+    logger.info("HTTP server closed");
+    process.exit(0);
+  });
+};
+
+const startServer = async () => {
+  try {
+    await prisma.$connect();
+
+    logger.info("Database connected successfully");
+
+    const server = app.listen(env.PORT, () => {
+      logger.info(`Server running on port ${env.PORT}`);
+    });
+
+    process.on("SIGINT",  () => {
+      void shutDown("SIGINT", server);
+    });
+
+    process.on("SIGTERM",  () => {
+      void shutDown("SIGTERM", server);
+    });
+  } catch (error) {
+    logger.fatal(error, "Application startup failed");
+    process.exit(1);
+  }
+};
+
+void startServer();
+
+
+
+================================================
+FILE: src/common/constants/cache.ts
+================================================
+export const CACHE_KEYS = {
+  USER_PERMISSIONS: (userId: string) => `permissions:${userId}`,
+} as const;
+
+export const CACHE_TTL = {
+  USER_PERMISSIONS: 60 * 10, // 10 minutes
+} as const;
+
+
+
+================================================
+FILE: src/common/constants/permissions.ts
+================================================
+export const PERMISSIONS = {
+  // User Management
+  MANAGE_USERS: "manage_users",
+
+  // Role Management
+  MANAGE_ROLES: "manage_roles",
+
+  // Product Permissions
+  CREATE_PRODUCT: "create_product",
+  UPDATE_PRODUCT: "update_product",
+  DELETE_PRODUCT: "delete_product",
+  VIEW_PRODUCT: "view_product",
+
+  // Order Permissions
+  CREATE_ORDER: "create_order",
+  UPDATE_ORDER: "update_order",
+  VIEW_ORDER: "view_order",
+  CANCEL_ORDER: "cancel_order",
+
+  // Analytics
+  VIEW_ANALYTICS: "view_analytics",
+} as const;
+
+export const PERMISSION_VALUES = Object.values(PERMISSIONS) as [
+  Permission,
+  ...Permission[],
+];
+
+export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
+
+
+
+================================================
+FILE: src/common/constants/roles.ts
+================================================
+export const SYSTEM_ROLES = {
+  USER:"USER",
+  SELLER: "SELLER",
+  ADMIN: "ADMIN",
+  SUPER_ADMIN:"SUPER_ADMIN"
+} as const 
+
+export type SystemRole = (typeof SYSTEM_ROLES)[keyof typeof SYSTEM_ROLES]
+export const IMMUTABLE_ROLES :ReadonlySet<string>= new Set([
+  SYSTEM_ROLES.ADMIN,
+  SYSTEM_ROLES.SUPER_ADMIN
+])
+
+export const DEFAULT_ROLE = SYSTEM_ROLES.USER;
+
+
+================================================
+FILE: src/common/errors/app-error.ts
+================================================
+export class AppError extends Error {
+  public readonly statusCode: number;
+  public readonly status: "fail" | "error";
+  public readonly isOperational: boolean;
+
+  constructor(message: string, statusCode: number) {
+    super(message);
+
+    this.statusCode = statusCode;
+    this.status = statusCode >= 400 && statusCode < 500 ? "fail" : "error";
+    this.isOperational = true;
+
+    Error.captureStackTrace(this, this.constructor);
+  }
+}
+
+
+
+================================================
+FILE: src/common/middleware/async-handler.ts
+================================================
+import type { NextFunction, Request, Response } from "express";
+
+type AsyncHandler = (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => Promise<void>;
+export const asyncHandler = (fn: AsyncHandler) => {
+  return (req: Request, res: Response, next: NextFunction) => {
+    fn(req, res, next).catch(next);
+  };
+};
+
+
+
+================================================
+FILE: src/common/middleware/auth.middleware.ts
+================================================
+import { NextFunction, Request, Response } from "express";
+import { AppError } from "@/common/errors/app-error";
+import { JwtService } from "@/common/services/jwt.services";
+import jwt from "jsonwebtoken"
+
+export const authenticate = (req:Request,_res:Response,next:NextFunction):void => {
+  try {
+    const authHeader = req.headers.authorization
+    if (!authHeader) {
+      return next( new AppError("Authentication required",401))
+    }
+    if (!authHeader.startsWith("Bearer ")) {
+      return next(new AppError("Invalid authentication header format", 401));
+          
+    }
+    const accessToken = authHeader.split(" ")[1];
+    if (!accessToken) {
+      return next(new AppError("Access token missing", 401));
+    }
+    const payload = JwtService.verifyAccessToken(accessToken);
+    req.user = {
+      userId: payload.userId,
+      sessionId:payload.sessionId
+    }
+    return next();
+    
+  } catch(error) {
+    if (error instanceof jwt.TokenExpiredError) {
+        return next(new AppError("Access token expired", 401));
+      }
+  
+      if (error instanceof jwt.JsonWebTokenError) {
+        return next(new AppError("Invalid access token", 401));
+      }
+    return next(error)
+  }
+}
+
+
+================================================
+FILE: src/common/middleware/authorization.middleware.ts
+================================================
+import { NextFunction, Request, Response } from "express";
+import { Permission } from "@/common/constants/permissions";
+import { AppError } from "@/common/errors/app-error";
+import { permissionService } from "../services/permission.service";
+export const authorizePermissions =
+  (...requiredPermissions: Permission[]) =>
+  async (req: Request, _res: Response, next: NextFunction): Promise<void> => {
+    try {
+      if (!req.user) {
+        throw new AppError("Authentication required", 401);
+      }
+      const permissions = await permissionService.getUserPermissions(req.user.userId);
+
+      const hasPermission = requiredPermissions.every((permission) =>
+        permissions.includes(permission),
+      );
+
+      if (!hasPermission) {
+        throw new AppError("Forbidden", 403);
+      }
+      next();
+    } catch (error) {
+      next(error);
+    }
+  };
+
+
+
+================================================
+FILE: src/common/middleware/error.middleware.ts
+================================================
+import { NextFunction, Request, Response } from "express";
+import { env } from "@/config/env.js";
+import { AppError } from "@/common/errors/app-error.js";
+
+const NODE_ENV = env.NODE_ENV;
+
+export async function globalErrorHandler(
+  err: unknown,
+  _req: Request,
+  res: Response,
+  _next: NextFunction,
+) {
+  let error: AppError;
+  if (err instanceof AppError) {
+    error = err;
+  } else if (err instanceof Error) {
+    error = new AppError(err.message, 500);
+  } else {
+    error = new AppError("Something went wrong", 500);
+  }
+
+  if (NODE_ENV === "development") {
+    return res.status(error.statusCode).json({
+      status: error.status,
+      message: error.message,
+      stack: err instanceof Error ? error.stack : undefined,
+      error,
+    });
+  }
+  if (error.isOperational) {
+    return res.status(error.statusCode).json({
+      success: false,
+      status: error.status,
+      message: error.message,
+    });
+  }
+  res.status(500).json({
+    success: false,
+    message: "Something went wrong",
+    status: "error",
+  });
+}
+
+
+
+================================================
+FILE: src/common/middleware/request-logger.ts
+================================================
+import { logger } from "@/config/logger";
+import { NextFunction, Request, Response } from "express";
+
+export const requestLogger = (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  const start = Date.now();
+
+  res.on("finish", () => {
+    const duration = Date.now() - start;
+    logger.info({
+      method: req.method,
+      url: req.originalUrl,
+      statusCode: req.statusCode,
+      duration: `${duration}ms`,
+      ip: req.ip,
+    });
+  });
+  next();
+};
+
+
+
+================================================
+FILE: src/common/middleware/validate.middleware.ts
+================================================
+import type { NextFunction, Request, Response } from "express";
+import { ZodType } from "zod";
+import { AppError } from "@/common/errors/app-error";
+import type { ParamsDictionary } from "express-serve-static-core";
+
+type ValidationTarget = "body" | "params" | "query";
+
+export const validate =
+  <T>(schema: ZodType<T>, target: ValidationTarget = "body") =>
+  (req: Request, _res: Response, next: NextFunction): void => {
+    const result = schema.safeParse(req[target]);
+    if (!result.success) {
+      throw new AppError(
+        result.error.issues
+          .map(({ path, message }) => `${path.join(".")}:${message}`)
+          .join(","),
+        400,
+      );
+    }
+    switch (target) {
+      case "body":
+        req.body = result.data;
+        break;
+
+      case "params":
+        req.params = result.data as ParamsDictionary;
+        break;
+
+        case "query":
+          Object.assign(req.query, result.data);
+          break;
+    }
+
+    next();
+  };
+
+
+
+================================================
+FILE: src/common/schema/pagination.schema.ts
+================================================
+import {z} from "zod";
+
+export const paginationSchema = z.object({
+  cursor: z.uuid().optional(),
+  limit: z.coerce.number().min(1).max(100).default(10),
+});
+export type PaginationDTO=z.infer<typeof paginationSchema>
+
+
+================================================
+FILE: src/common/services/cache.service.ts
+================================================
+import { logger } from "@/config/logger";
+import { redis } from "@/infrastructure/database";
+
+export class CacheService {
+  async get<T>(key: string): Promise<T | null> {
+    try {
+      const value = await redis.get(key);
+
+      if (!value) {
+        return null;
+      }
+
+      return JSON.parse(value) as T;
+    } catch (error) {
+      logger.error(
+        {
+          error,
+          key,
+        },
+        "Redis GET failed",
+      );
+
+      return null;
+    }
+  }
+
+  async set<T>(key: string, value: T, ttl: number): Promise<void> {
+    try {
+      await redis.set(key, JSON.stringify(value), "EX", ttl);
+    } catch (error) {
+      logger.error(
+        {
+          error,
+          key,
+        },
+        "Redis SET failed",
+      );
+    }
+  }
+
+  async del(key: string): Promise<void> {
+    try {
+      await redis.del(key);
+    } catch (error) {
+      logger.error(
+        {
+          error,
+          key,
+        },
+        "Redis DEL failed",
+      );
+    }
+  }
+
+  async delMany(keys: string[]): Promise<void> {
+    if (!keys.length) {
+      return;
+    }
+
+    try {
+      await redis.del(...keys);
+    } catch (error) {
+      logger.error(
+        {
+          error,
+          keys,
+        },
+        "Redis DEL MANY failed",
+      );
+    }
+  }
+}
+
+export const cacheService = new CacheService();
+
+
+================================================
+FILE: src/common/services/google.service.ts
+================================================
+import { env } from "@/config/env";
+import { OAuth2Client } from "google-auth-library";
+import { AppError } from "../errors/app-error";
+const googleClient = new OAuth2Client(
+  env.GOOGLE_CLIENT_ID,
+  env.GOOGLE_CLIENT_SECRET,
+  env.GOOGLE_REDIRECT_URL,
+);
+
+export class GoogleService {
+  generateAuthUrl(state: string): string {
+    return googleClient.generateAuthUrl({
+      access_type: "offline",
+      prompt: "consent",
+      scope: ["openid", "email", "profile"],
+      state,
+    });
+  }
+  async exchangeCodeForTokens(code: string) {
+    const { tokens } = await googleClient.getToken(code);
+    if (!tokens.id_token) {
+      throw new AppError("Google did not return an ID token", 502);
+    }
+
+    return tokens;
+  }
+
+  async verifyToken(idToken: string) {
+    const ticket = await googleClient.verifyIdToken({
+      idToken,
+      audience: env.GOOGLE_CLIENT_ID,
+    });
+    const payload = ticket.getPayload();
+
+    if (!payload) {
+      throw new AppError("Unable to verify Google ID token", 401);
+    }
+
+    return payload;
+  }
+
+}
+
+export const googleService = new GoogleService();
+
+
+
+================================================
+FILE: src/common/services/jwt.services.ts
+================================================
+import { env } from "@/config/env";
+import jwt, { JwtPayload, SignOptions } from "jsonwebtoken";
+import { AppError } from "../errors/app-error";
+
+export interface AccessTokenPayload extends JwtPayload {
+  readonly userId: string;
+  readonly sessionId: string;
+}
+
+export interface RefreshTokenPayload extends JwtPayload {
+  readonly userId: string;
+  readonly sessionId: string;
+}
+
+export const authConfig = {
+  accessToken: {
+    secret: env.JWT_ACCESS_TOKEN_SECRET,
+    expiry: env.JWT_ACCESS_TOKEN_EXPIRY,
+  },
+  refreshToken: {
+    secret: env.JWT_REFRESH_TOKEN_SECRET,
+    expiry: env.JWT_REFRESH_TOKEN_EXPIRY,
+  },
+};
+export class JwtService {
+  static signAccessToken(payload: AccessTokenPayload): string {
+    const options: SignOptions = {
+      expiresIn: authConfig.accessToken.expiry,
+    };
+
+    return jwt.sign(payload, authConfig.accessToken.secret, options);
+  }
+  static verifyAccessToken(token: string): AccessTokenPayload {
+    try {
+      return jwt.verify(
+        token,
+        authConfig.accessToken.secret,
+      ) as AccessTokenPayload;
+    } catch {
+      throw new AppError("Invalid or expired access token", 401);
+    }
+  }
+
+  static signRefreshToken(payload: RefreshTokenPayload): string {
+    const options: SignOptions = {
+      expiresIn: authConfig.refreshToken.expiry,
+    };
+    return jwt.sign(payload, authConfig.refreshToken.secret, options);
+  }
+  static verifyRefreshToken(token: string): RefreshTokenPayload {
+    try {
+  
+      const decoded = jwt.verify(
+        token,
+        authConfig.refreshToken.secret,
+      ) as RefreshTokenPayload;
+  
+  
+      return decoded;
+    } catch (error) {
+      console.error("JWT VERIFY FAILED:", error);
+  
+      throw new AppError("Invalid or expired refresh token", 401);
+    }
+  }
+}
+
+
+
+================================================
+FILE: src/common/services/password.service.ts
+================================================
+import argon2 from "argon2";
+
+export class PasswordService {
+  static hash(password: string): Promise<string> {
+    return argon2.hash(password, {
+      type: argon2.argon2id,
+      memoryCost: 19456,
+      timeCost: 2,
+      parallelism: 1,
+    });
+  }
+
+  static verify(password: string, hashedPassword: string): Promise<boolean> {
+    return argon2.verify(hashedPassword, password);
+  }
+  static hashRefreshToken(refreshToken: string): Promise<string>{
+    return argon2.hash(refreshToken)
+  }
+  static verifyRefreshToken(refreshToken: string, hash: string): Promise<boolean>{
+    return argon2.verify(hash,refreshToken)
+  }
+}
+
+
+
+================================================
+FILE: src/common/services/permission.service.ts
+================================================
+import { CACHE_KEYS, CACHE_TTL } from "@/common/constants/cache";
+import { Permission } from "@/common/constants/permissions";
+import { logger } from "@/config/logger";
+import { authRepository } from "@/modules/auth/auth.container";
+import { cacheService } from "./cache.service";
+
+export class PermissionService {
+  async getUserPermissions(userId: string): Promise<Permission[]> {
+    const cacheKey = CACHE_KEYS.USER_PERMISSIONS(userId);
+
+    // 1. Check cache
+    const cachedPermissions =
+      await cacheService.get<Permission[]>(cacheKey);
+
+    if (cachedPermissions) {
+      logger.info({ userId }, "Permission cache hit");
+      return cachedPermissions;
+    }
+
+    logger.info({ userId }, "Permission cache miss");
+
+    // 2. Load from database
+    const userRoles = await authRepository.getUserPermissions(userId);
+
+    // 3. Flatten permissions
+    const permissions = userRoles.flatMap((userRole) =>
+      userRole.role.rolePermissions.map(
+        (rolePermission) => rolePermission.permission.name as Permission,
+      ),
+    );
+
+    // 4. Remove duplicates
+    const uniquePermissions = [...new Set(permissions)];
+
+    // 5. Store in Redis
+    await cacheService.set(
+      cacheKey,
+      uniquePermissions,
+      CACHE_TTL.USER_PERMISSIONS,
+    );
+
+    // 6. Return permissions
+    return uniquePermissions;
+  }
+
+  async invalidateUserPermissions(userId: string): Promise<void> {
+    await cacheService.del(CACHE_KEYS.USER_PERMISSIONS(userId));
+  }
+
+  async invalidateRoleUsers(roleId: string): Promise<void> {
+    const userIds = await authRepository.findUserIdsByRole(roleId);
+
+    if (!userIds.length) {
+      return;
+    }
+
+    const keys = userIds.map((userId) =>
+      CACHE_KEYS.USER_PERMISSIONS(userId),
+    );
+
+    await cacheService.delMany(keys);
+  }
+}
+
+export const permissionService = new PermissionService();
+
+
+================================================
+FILE: src/common/services/token.service.ts
+================================================
+import crypto from "crypto";
+export class TokenService {
+  private constructor() {}
+
+  static hashRefreshToken(token: string): string {
+    return crypto.createHash("sha256").update(token).digest("hex");
+  }
+  static generateRefreshToken(): string {
+    return crypto.randomBytes(64).toString("hex");
+  }
+  static verifyRefreshToken(
+    refreshToken: string,
+    refreshTokenHash: string,
+  ): boolean {
+    const hash = this.hashRefreshToken(refreshToken);
+    return crypto.timingSafeEqual(
+      Buffer.from(hash),
+      Buffer.from(refreshTokenHash),
+    );
+  }
+}
+
+
+
+================================================
+FILE: src/common/types/express.d.ts
+================================================
+declare global {
+  namespace Express {
+    interface Request {
+      user?: {
+        userId: string;
+        sessionId: string;
+      };
+    }
+  }
+}
+export {};
+
+
+
+================================================
+FILE: src/common/types/index.ts
+================================================
+export interface ApiResponse<T>{
+  success: boolean;
+  message: string;
+  data?: T;
+  error?: {
+    code: string;
+    details?:unknown
+  }
+}
+
+
+================================================
+FILE: src/common/utils/cookie.ts
+================================================
+import { env } from "@/config/env";
+import ms from "ms";
+import { AppError } from "../errors/app-error";
+import { Response } from "express";
+
+const refreshTokenMaxAge = ms(env.JWT_REFRESH_TOKEN_EXPIRY)
+
+if (typeof refreshTokenMaxAge !== "number") {
+  throw new AppError("Invalid refresh token expiry configuration",500)
+}
+export const setRefreshTokenCookie = (res: Response, refreshToken: string):void=>{
+  res.cookie(env.COOKIE_NAME, refreshToken, {
+    httpOnly: true,
+    secure: env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge:refreshTokenMaxAge
+  })
+}
+
+export const clearRefreshTokenCookie = (res: Response): void => {
+  res.clearCookie(env.COOKIE_NAME, {
+    httpOnly: true,
+       secure: env.NODE_ENV === "production",
+       sameSite: "lax",
+       path: "/",
+  })
+}
+
+
+================================================
+FILE: src/common/utils/oauth-cookie.ts
+================================================
+import { env } from "@/config/env";
+import { Response } from "express";
+
+const OAUTH_STATE_COOKIE_NAME = "oauth_state";
+const OAUTH_STATE_COOKIE_MAX_AGE = 10 * 60 * 1000; // 10 minutes
+
+export const setOAuthStateCookie = (res: Response, state: string): void => {
+  res.cookie(OAUTH_STATE_COOKIE_NAME, state, {
+    httpOnly: true,
+    maxAge: OAUTH_STATE_COOKIE_MAX_AGE,
+    sameSite: "lax",
+    secure: env.NODE_ENV === "production",
+    path: "/",   // path determines which request paths will receive the cookie.
+  });
+};
+
+export const clearOAuthStateCookie = (res: Response): void => {
+  res.clearCookie(OAUTH_STATE_COOKIE_NAME, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+  });
+};
+
+export { OAUTH_STATE_COOKIE_NAME, OAUTH_STATE_COOKIE_MAX_AGE };
+
+
+
+================================================
+FILE: src/common/utils/send-response.ts
+================================================
+import { Response } from "express";
+
+
+interface ResponseOptions<T>{
+  success:boolean;
+  message:string;
+  data:T;
+  meta?:Record<string,unknown>;
+}
+
+
+export const sendResponse = <T>(
+  res:Response,
+  statusCode:number,
+  options:ResponseOptions<T>
+)=>{
+
+  res.status(statusCode).json({
+    success:options.success,
+    message:options.message,
+    data:options.data,
+    ...(options.meta && {
+      meta:options.meta
+    })
+  });
+
+};
+
+
+================================================
+FILE: src/config/env.ts
+================================================
+import "dotenv/config";
+
+import { z } from "zod";
+import type { StringValue } from "ms";
+
+const envSchema = z.object({
+  NODE_ENV: z
+    .enum(["development", "production", "test"])
+    .default("development"),
+  PORT: z.coerce.number().int().positive().default(4000),
+  DATABASE_URL: z.url(),
+  JWT_ACCESS_TOKEN_SECRET: z.string(),
+  JWT_ACCESS_TOKEN_EXPIRY: z.custom<StringValue>(),
+  JWT_REFRESH_TOKEN_SECRET: z.string(),
+  JWT_REFRESH_TOKEN_EXPIRY: z.custom<StringValue>(),
+  COOKIE_NAME: z.string(),
+  REDIS_HOST: z.string(),
+  REDIS_PORT: z.coerce.number(),
+  GOOGLE_CLIENT_ID: z.string(),
+  GOOGLE_CLIENT_SECRET: z.string(),
+  GOOGLE_REDIRECT_URL: z.url(),
+  FRONTEND_URL: z.string(),
+});
+
+export const env = envSchema.parse(process.env);
+
+
+
+================================================
+FILE: src/config/logger.ts
+================================================
+import pino from "pino";
+import { env } from "@/config/env.js";
+
+export const logger = pino({
+  ...(env.NODE_ENV === "development" && {
+    transport: {
+      target: "pino-pretty",
+    },
+  }),
+});
+
+
+================================================
+FILE: src/infrastructure/database/index.ts
+================================================
+export { prisma } from "@/infrastructure/database/prisma.js";
+
+export { default as redis } from "@/infrastructure/database/redis.js";
+
+
+
+================================================
+FILE: src/infrastructure/database/prisma.ts
+================================================
+import { env } from "@/config/env";
+import { PrismaClient } from "@/generated/prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
+
+const adapter = new PrismaPg( env.DATABASE_URL );
+const prisma = new PrismaClient({ adapter });
+
+export { prisma };
+
+
+================================================
+FILE: src/infrastructure/database/redis.ts
+================================================
+import { env } from "@/config/env";
+import { logger } from "@/config/logger";
+import Redis from "ioredis";
+
+const redis = new Redis({
+  host: env.REDIS_HOST,
+  port: env.REDIS_PORT,
+  maxRetriesPerRequest: null,
+  lazyConnect: true,
+  enableReadyCheck: true,
+});
+
+redis.on("connect", () => {
+  logger.info("Redis connected successfully");
+});
+redis.on("error", (error) => {
+  logger.error(`Redis failed to connect: ${error}`);
+});
+
+export default redis;
+
+
+
+================================================
+FILE: src/modules/admin/admin.container.ts
+================================================
+import { AdminRepository } from "./admin.repository";
+import { AdminService } from "./admin.service";
+
+const adminRepository = new AdminRepository();
+const adminService = new AdminService(adminRepository);
+
+export { adminService };
+
+
+
+================================================
+FILE: src/modules/admin/admin.controller.ts
+================================================
+import { asyncHandler } from "@/common/middleware/async-handler";
+import { Request, Response } from "express";
+import { adminService } from "./admin.container";
+import { sendResponse } from "@/common/utils/send-response";
+import { PaginationDTO } from "@/common/schema/pagination.schema";
+
+export const getAllUsersController = asyncHandler(
+  async (req: Request, res: Response) => {
+    const query = req.query as unknown as PaginationDTO;
+
+    const result = await adminService.getAllUsers(query);
+    sendResponse(res, 200, {
+      success: true,
+      message: "All users fetched successfully",
+      data: result,
+      meta: {
+        pagination: result.pagination,
+      },
+    });
+  },
+);
+
+export const getUserByIdController = asyncHandler(
+  async (req: Request, res: Response) => {
+    const result = await adminService.getUserById(req.params.userId as string);
+
+    sendResponse(res, 200, {
+      success: true,
+      message: "User fetched successfully",
+      data: result,
+    });
+  },
+);
+export const getAllRolesController = asyncHandler(
+  async (req: Request, res: Response) => {
+    const query = req.query as unknown as PaginationDTO;
+    const result = await adminService.getAllRoles(query);
+
+    sendResponse(res, 200, {
+      success: true,
+      message: "Roles fetched successfully",
+      data: result,
+      meta: {
+        pagination: result.pagination,
+      },
+    });
+  },
+);
+export const getRoleByIdController = asyncHandler(
+  async (req: Request, res: Response) => {
+    const result = await adminService.getRoleById(req.params.roleId as string);
+
+    sendResponse(res, 200, {
+      success: true,
+      message: "Role fetched successfully",
+      data: result,
+    });
+  },
+);
+
+export const createRoleController = asyncHandler(
+  async (req: Request, res: Response) => {
+    const result = await adminService.createRole(req.body);
+
+    sendResponse(res, 201, {
+      success: true,
+      message: "Role created successfully",
+      data: result,
+    });
+  },
+);
+export const updateRoleController = asyncHandler(
+  async (req: Request, res: Response) => {
+    const result = await adminService.updateRole(
+      req.params.roleId as string,
+      req.body,
+    );
+
+    sendResponse(res, 200, {
+      success: true,
+      message: "Role updated successfully",
+      data: result,
+    });
+  },
+);
+export const deleteRoleController = asyncHandler(
+  async (req: Request, res: Response) => {
+    await adminService.deleteRole(req.params.roleId as string);
+
+    sendResponse(res, 200, {
+      success: true,
+      message: "Role deleted successfully",
+      data: null,
+    });
+  },
+);
+
+export const assignPermissionsController = asyncHandler(
+  async (req: Request, res: Response) => {
+    await adminService.assignPermissionsToRole(
+      req.params.roleId as string,
+      req.body,
+    );
+
+    sendResponse(res, 200, {
+      success: true,
+      message: "Permissions assigned successfully",
+      data: null,
+    });
+  },
+);
+
+export const assignRoleToUserController = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { userId } = req.params;
+
+    await adminService.assignRoleToUser(userId as string, req.body);
+
+    sendResponse(res, 200, {
+      success: true,
+      message: "Role assigned successfully",
+      data: null,
+    });
+  },
+);
+
+export const removeRoleFromUserController = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { userId } = req.params;
+
+    await adminService.removeRoleFromUser(userId as string, req.body);
+
+    sendResponse(res, 200, {
+      success: true,
+      message: "Role removed successfully",
+      data: null,
+    });
+  },
+);
+export const replaceRolePermissionsController = asyncHandler(
+  async (req, res) => {
+    await adminService.replaceRolePermissions(
+      req.params.roleId as string,
+      req.body,
+    );
+
+    sendResponse(res, 200, {
+      success: true,
+      message: "Role permissions updated successfully",
+      data: null,
+    });
+  },
+);
+
+
+
+================================================
+FILE: src/modules/admin/admin.guard.ts
+================================================
+import { AppError } from "@/common/errors/app-error";
+
+const ensureImmutable = (role: { isSystem: boolean }, message: string) => {
+  if (role.isSystem) {
+    throw new AppError(message, 403);
+  }
+};
+export const ensureRoleIsEditable = (role: { isSystem: boolean }) =>
+  ensureImmutable(role, "System roles cannot be modified");
+
+export const ensureRoleIsDeletable = (role: { isSystem: boolean }) =>
+  ensureImmutable(role, "System roles cannot be deleted");
+
+export const ensureRoleIsAssignable = (role: { isSystem: boolean }) =>
+  ensureImmutable(role, "System roles cannot be assigned");
+
+
+
+================================================
+FILE: src/modules/admin/admin.interface.ts
+================================================
+import { Role, UserRole } from "@/generated/prisma/client";
+import { Permission as PermissionModel } from "@/generated/prisma/client";
+import {
+  AdminUserType,
+  CreateRoleData,
+  CursorPaginationResult,
+  GetRoleByIdType,
+  RoleListType,
+  UpdateRoleData,
+} from "./admin.types";
+import { Permission } from "@/common/constants/permissions";
+
+export interface IAdminRepository {
+  getAllUsers(
+    cursor?: string,
+    limit?: number,
+  ): Promise<CursorPaginationResult<AdminUserType>>;
+
+  findUserById(userId: string): Promise<AdminUserType | null>;
+
+  getAllRoles(
+    cursor?: string,
+    limit?: number,
+  ): Promise<CursorPaginationResult<RoleListType>>;
+  getRoleById(roleId: string): Promise<GetRoleByIdType | null>;
+  findRoleByName(name: string): Promise<Role | null>;
+
+  createRole(data: CreateRoleData): Promise<Role>;
+  updateRole(roleId: string, data: UpdateRoleData): Promise<Role>;
+  deleteRole(roleId: string): Promise<void>;
+
+  assignPermissionsToRole(
+    roleId: string,
+    permissionIds: string[],
+  ): Promise<void>;
+
+  replaceRolePermissions(
+    roleId: string,
+    permissionIds: string[],
+  ): Promise<void>;
+
+  findPermissionsByNames(names: Permission[]): Promise<PermissionModel[]>;
+
+  assignRoleToUser(userId: string, roleId: string): Promise<UserRole>;
+
+  removeRoleFromUser(userId: string, roleId: string): Promise<void>;
+
+}
+
+
+
+================================================
+FILE: src/modules/admin/admin.mapper.ts
+================================================
+import { AdminUserDTO, AdminUserType, CursorPaginationResult, GetRoleByIdType, RoleListType } from "./admin.types";
+import {
+  PermissionResponseDTO,
+  RoleDetailsResponseDTO,
+  RoleListResponseDTO,
+  RoleResponseDTO,
+  UserRoleResponseDTO,
+} from "./admin.response";
+import { Role } from "@/generated/prisma/client";
+
+export const toRoleResponse = (role: Role): RoleResponseDTO => ({
+  id: role.id,
+  name: role.name,
+  isSystem: role.isSystem,
+  createdAt: role.createdAt,
+});
+
+export const toUserResponse = (user: AdminUserType): AdminUserDTO => ({
+  id: user.id,
+  email: user.email,
+  isEmailVerified: user.isEmailVerified,
+  createdAt: user.createdAt,
+});
+
+export const toPermissionResponse = (permission: {
+  id: string;
+  name: string;
+}): PermissionResponseDTO => ({
+  id: permission.id,
+  name: permission.name,
+});
+
+export const toUserRoleResponse = (
+  userRole: GetRoleByIdType["userRoles"][number],
+): UserRoleResponseDTO => ({
+  id: userRole.user.id,
+  email: userRole.user.email,
+  assignedAt: userRole.assignedAt,
+});
+
+export const toRoleDetailsResponse = (
+  role: GetRoleByIdType,
+): RoleDetailsResponseDTO => ({
+  id: role.id,
+  name: role.name,
+  createdAt: role.createdAt,
+  isSystem: role.isSystem,
+
+
+  permissions: role.rolePermissions.map((rp) => ({
+    assignedAt: rp.assignedAt,
+    ...toPermissionResponse(rp.permission),
+  })),
+
+  users: role.userRoles.map(toUserRoleResponse),
+});
+
+export const toRoleListResponse = (
+  role: RoleListType,
+): RoleListResponseDTO => ({
+  id: role.id,
+  name: role.name,
+  isSystem: role.isSystem,
+  createdAt: role.createdAt,
+  userCount: role._count.userRoles,
+  permissionCount: role._count.rolePermissions,
+});
+
+
+export const toCursorPaginationResponse = <T, R>(
+  result: CursorPaginationResult<T>,
+  mapper: (item: T) => R,
+) => ({
+  data: result.data.map(mapper),
+
+  pagination: {
+    nextCursor: result.pagination.nextCursor,
+    hasMore: result.pagination.hasMore,
+    limit: result.pagination.limit,
+  },
+});
+
+
+
+================================================
+FILE: src/modules/admin/admin.repository.ts
+================================================
+import { IAdminRepository } from "./admin.interface";
+import { prisma } from "@/infrastructure/database";
+import {
+  AdminUserType,
+  CreateRoleData,
+  CursorPaginationResult,
+  GetRoleByIdType,
+  RoleListType,
+  UpdateRoleData,
+} from "./admin.types";
+import { Prisma, Role, UserRole } from "@/generated/prisma/client";
+import { adminRoleSelect, adminUserSelect } from "./admin.select";
+import { Permission as PermissionModel } from "@/generated/prisma/client";
+import { Permission } from "@/common/constants/permissions";
+import { AppError } from "@/common/errors/app-error";
+
+
+export class AdminRepository implements IAdminRepository {
+  async getAllUsers(
+    cursor?: string,
+    limit = 10,
+  ): Promise<CursorPaginationResult<AdminUserType>> {
+    const users = await prisma.user.findMany({
+      take: limit + 1,
+
+      ...(cursor && {
+        cursor: {
+          id: cursor,
+        },
+        skip: 1,
+      }),
+
+      orderBy: [
+        {
+          createdAt: "desc",
+        },
+        {
+          id: "desc",
+        },
+      ],
+
+      select: adminUserSelect,
+    });
+
+    const hasMore = users.length > limit;
+
+    if (hasMore) {
+      users.pop();
+    }
+
+    return {
+      data: users,
+      pagination: {
+        hasMore,
+        nextCursor: hasMore ? users[users.length - 1].id : null,
+        limit,
+      },
+    };
+  }
+  async findUserById(userId: string): Promise<AdminUserType | null> {
+    return prisma.user.findUnique({
+      where: { id: userId },
+      select: adminUserSelect,
+    });
+  }
+  async getAllRoles(
+    cursor?: string,
+    limit = 10,
+  ): Promise<CursorPaginationResult<RoleListType>> {
+    const roles = await prisma.role.findMany({
+      take: limit + 1,
+
+      ...(cursor && {
+        cursor: {
+          id: cursor,
+        },
+        skip: 1,
+      }),
+
+      orderBy: [
+        {
+          createdAt: "desc",
+        },
+        {
+          id: "desc",
+        },
+      ],
+
+      select: {
+        ...adminRoleSelect,
+
+        _count: {
+          select: {
+            userRoles: true,
+            rolePermissions: true,
+          },
+        },
+      },
+    });
+
+    const hasMore = roles.length > limit;
+
+    if (hasMore) {
+      roles.pop();
+    }
+
+    return {
+      data: roles,
+
+      pagination: {
+        hasMore,
+        nextCursor: hasMore ? roles[roles.length - 1].id : null,
+        limit,
+      },
+    };
+  }
+  async getRoleById(roleId: string): Promise<GetRoleByIdType | null> {
+    return prisma.role.findUnique({
+      where: { id: roleId },
+      select: {
+        ...adminRoleSelect,
+
+        rolePermissions: {
+          select: {
+            assignedAt: true,
+            permission: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
+        userRoles: {
+          select: {
+            assignedAt: true,
+            user: {
+              select: {
+                id: true,
+                email: true,
+                createdAt: true,
+              },
+            },
+          },
+        },
+      },
+    });
+  }
+  async createRole(data: CreateRoleData): Promise<Role> {
+    return prisma.role.create({
+      data: { name: data.name },
+    });
+  }
+  async updateRole(roleId: string, data: UpdateRoleData): Promise<Role> {
+    return prisma.role.update({
+      where: { id: roleId },
+      data: {
+        ...(data.name && {
+          name: data.name,
+        }),
+      },
+    });
+  }
+  async deleteRole(roleId: string): Promise<void> {
+    await prisma.$transaction(async (tx) => {
+      const assignedUsers = await tx.userRole.count({
+        where: {
+          roleId,
+        },
+      });
+
+      if (assignedUsers > 0) {
+        throw new AppError("Cannot delete role assigned to users", 409);
+      }
+
+      try {
+        await tx.role.delete({
+          where: { id: roleId }
+        });
+      } catch (error) {
+        if (
+          error instanceof Prisma.PrismaClientKnownRequestError &&
+          error.code === "P2025"
+        ) {
+          throw new AppError("Role not found", 404);
+        }
+      
+        throw error;
+      }
+    });
+  }
+  async findRoleByName(name: string): Promise<Role | null> {
+    return prisma.role.findUnique({
+      where: { name },
+    });
+  }
+
+  async assignPermissionsToRole(
+    roleId: string,
+    permissionIds: string[],
+  ): Promise<void> {
+    await prisma.rolePermission.createMany({
+      data: permissionIds.map((permissionId) => ({
+        roleId,
+        permissionId,
+      })),
+      skipDuplicates: true,
+    });
+  }
+  async findPermissionsByNames(
+    names: Permission[],
+  ): Promise<PermissionModel[]> {
+    return await prisma.permission.findMany({
+      where: {
+        name: {
+          in: names,
+        },
+      },
+    });
+  }
+  async assignRoleToUser(userId: string, roleId: string): Promise<UserRole> {
+    return prisma.userRole.create({
+      data: {
+        userId,
+        roleId,
+      },
+    });
+  }
+
+  async replaceRolePermissions(
+    roleId: string,
+    permissionIds: string[],
+  ): Promise<void> {
+    await prisma.$transaction(async (tx) => {
+      await tx.rolePermission.deleteMany({
+        where: { roleId },
+      });
+      await tx.rolePermission.createMany({
+        data: permissionIds.map((permissionId) => ({
+          roleId,
+          permissionId,
+        })),
+        skipDuplicates: true,
+      });
+    });
+  }
+
+  async removeRoleFromUser(userId: string, roleId: string): Promise<void> {
+    await prisma.$transaction(async (tx) => {
+      const assignment = await tx.userRole.findUnique({
+        where: {
+          userId_roleId: {
+            userId,
+            roleId,
+          },
+        },
+        include: {
+          role: true,
+        },
+      });
+      if (!assignment) {
+        throw new AppError("Role is not assigned to user", 404);
+      }
+
+      if (assignment.role.isSystem) {
+        const adminCount = await tx.userRole.count({
+          where: {
+            roleId: assignment.roleId,
+          },
+        });
+
+        if (adminCount <= 1) {
+          throw new AppError("Cannot remove the last admin", 403);
+        }
+      }
+      await tx.userRole.delete({
+        where: {
+          userId_roleId: {
+            userId,
+            roleId,
+          },
+        },
+      });
+    });
+  }
+}
+
+
+
+
+================================================
+FILE: src/modules/admin/admin.response.ts
+================================================
+
+export interface RoleResponseDTO {
+  id:string;
+  name:string;
+  createdAt:Date;
+  isSystem:boolean;
+}
+
+export interface PermissionResponseDTO {
+  id: string;
+  name: string;
+}
+
+export interface UserRoleResponseDTO {
+  id: string;
+  email: string;
+  assignedAt: Date;
+}
+
+export interface RoleDetailsResponseDTO extends RoleResponseDTO {
+  permissions: {
+    id: string;
+    name: string;
+    assignedAt: Date;
+  }[];
+
+  users: UserRoleResponseDTO[];
+}
+
+export interface RoleListResponseDTO {
+  id: string;
+  name: string;
+  createdAt: Date;
+  userCount: number;
+  permissionCount: number;
+  isSystem:boolean
+}
+export interface CursorPaginationResponseDTO<T> {
+  data: T[];
+  pagination: {
+    nextCursor: string | null;
+    hasMore: boolean;
+    limit: number;
+  };
+}
+
+
+
+================================================
+FILE: src/modules/admin/admin.route.ts
+================================================
+import express from "express";
+import {
+  assignPermissionsController,
+  assignRoleToUserController,
+  createRoleController,
+  deleteRoleController,
+  getAllRolesController,
+  getAllUsersController,
+  getRoleByIdController,
+  getUserByIdController,
+  removeRoleFromUserController,
+  replaceRolePermissionsController,
+  updateRoleController,
+} from "./admin.controller";
+import { authorizePermissions } from "@/common/middleware/authorization.middleware";
+import { PERMISSIONS } from "@/common/constants/permissions";
+import { authenticate } from "@/common/middleware/auth.middleware";
+import { validate } from "@/common/middleware/validate.middleware";
+import {
+  assignPermissionsSchema,
+  assignRoleSchema,
+  createRoleSchema,
+  removeRoleSchema,
+  roleIdSchema,
+  updateRoleSchema,
+  userIdSchema,
+} from "./admin.schema";
+import { paginationSchema } from "@/common/schema/pagination.schema";
+
+const router = express.Router();
+
+router
+  .route("/users")
+  .get(
+    authenticate,
+    authorizePermissions(PERMISSIONS.MANAGE_USERS),
+     validate(paginationSchema, "query"),
+    getAllUsersController,
+  );
+router.route("/users/:userId").get(
+  authenticate,
+  authorizePermissions(PERMISSIONS.MANAGE_USERS),
+  validate(userIdSchema, "params"),
+
+  getUserByIdController,
+);
+router.get(
+  "/roles",
+  authenticate,
+  authorizePermissions(PERMISSIONS.MANAGE_ROLES),
+   validate(paginationSchema,"query"),
+  getAllRolesController,
+);
+router.get(
+  "/roles/:roleId",
+  authenticate,
+  authorizePermissions(PERMISSIONS.MANAGE_ROLES),
+  validate(roleIdSchema, "params"),
+  getRoleByIdController,
+);
+
+router.post(
+  "/roles",
+  authenticate,
+  authorizePermissions(PERMISSIONS.MANAGE_ROLES),
+  validate(createRoleSchema),
+  createRoleController,
+);
+
+router.patch(
+  "/roles/:roleId",
+  authenticate,
+  authorizePermissions(PERMISSIONS.MANAGE_ROLES),
+  validate(roleIdSchema, "params"),
+  validate(updateRoleSchema),
+  updateRoleController,
+);
+
+router.delete(
+  "/roles/:roleId",
+  authenticate,
+  authorizePermissions(PERMISSIONS.MANAGE_ROLES),
+  validate(roleIdSchema, "params"),
+  deleteRoleController,
+);
+
+router.post(
+  "/roles/:roleId/permissions",
+  authenticate,
+  authorizePermissions(PERMISSIONS.MANAGE_ROLES),
+  validate(roleIdSchema, "params"),
+  validate(assignPermissionsSchema),
+  assignPermissionsController,
+);
+
+router.post(
+  "/users/:userId/roles",
+  authenticate,
+  authorizePermissions(PERMISSIONS.MANAGE_ROLES),
+  validate(userIdSchema, "params"),
+  validate(assignRoleSchema),
+  assignRoleToUserController,
+);
+
+router.delete(
+  "/users/:userId/roles",
+  authenticate,
+  authorizePermissions(PERMISSIONS.MANAGE_ROLES),
+  validate(userIdSchema, "params"),
+  validate(removeRoleSchema),
+
+  removeRoleFromUserController,
+);
+
+router.put(
+  "/roles/:roleId/permissions",
+  authenticate,
+  authorizePermissions(PERMISSIONS.MANAGE_ROLES),
+  validate(roleIdSchema, "params"),
+  validate(assignPermissionsSchema),
+  replaceRolePermissionsController,
+);
+export default router;
+
+
+
+================================================
+FILE: src/modules/admin/admin.schema.ts
+================================================
+import { PERMISSION_VALUES } from "@/common/constants/permissions";
+import { z } from "zod";
+
+export const getRoleByIdSchema = z.object({
+  roleId: z.uuid(),
+});
+
+export const createRoleSchema = z
+  .object({
+    name: z
+      .string()
+      .trim()
+      .min(2, "Role name must be at least 2 characters")
+      .max(50, "Role name cannot exceed 50 characters")
+      .transform((value) => value.toUpperCase()),
+  })
+  .strict();
+
+export const updateRoleSchema = createRoleSchema.partial();
+
+export const roleIdSchema = z.object({
+  roleId: z.uuid("Invalid role id"),
+});
+export const userIdSchema = z.object({
+  userId: z.uuid("Invalid user id"),
+});
+
+export const assignPermissionsSchema = z
+  .object({
+    permissions: z
+      .array(z.enum(PERMISSION_VALUES))
+      .min(1, "At least one permission is required"),
+  })
+  .strict();
+
+export const assignRoleSchema = z
+  .object({
+    roleId: z.uuid(),
+  })
+  .strict();
+export const removeRoleSchema = z
+  .object({
+    roleId: z.uuid(),
+  })
+  .strict();
+
+export type CreateRoleDTO = z.infer<typeof createRoleSchema>;
+export type UpdateRoleDTO = z.infer<typeof updateRoleSchema>;
+export type AssignPermissionsDTO = z.infer<typeof assignPermissionsSchema>;
+
+export type AssignRoleDTO = z.infer<typeof assignRoleSchema>;
+export type RemoveRoleDTO = z.infer<typeof removeRoleSchema>;
+
+
+
+================================================
+FILE: src/modules/admin/admin.select.ts
+================================================
+import { Prisma } from "@/generated/prisma/client";
+
+export const adminUserSelect = {
+  id: true,
+  email: true,
+  isEmailVerified: true,
+  createdAt: true,
+} satisfies Prisma.UserSelect;
+export const adminRoleSelect = {
+  id: true,
+  name: true,
+  createdAt: true,
+  isSystem: true,
+} satisfies Prisma.RoleSelect;
+
+
+
+================================================
+FILE: src/modules/admin/admin.service.ts
+================================================
+import { AppError } from "@/common/errors/app-error";
+import { IAdminRepository } from "./admin.interface";
+import {
+  AdminUserDTO,
+  CursorPaginationResult,
+} from "./admin.types";
+import { Prisma } from "@/generated/prisma/client";
+import {
+  toCursorPaginationResponse,
+  toRoleDetailsResponse,
+  toRoleListResponse,
+  toRoleResponse,
+  toUserResponse,
+} from "./admin.mapper";
+import {
+  AssignPermissionsDTO,
+  AssignRoleDTO,
+  CreateRoleDTO,
+  RemoveRoleDTO,
+  UpdateRoleDTO,
+} from "./admin.schema";
+
+
+import { permissionService } from "@/common/services/permission.service";
+import { RoleDetailsResponseDTO, RoleListResponseDTO, RoleResponseDTO } from "./admin.response";
+import { PaginationDTO } from "@/common/schema/pagination.schema";
+import {
+  ensureRoleIsAssignable,
+  ensureRoleIsDeletable,
+  ensureRoleIsEditable,
+} from "./admin.guard";
+
+export class AdminService {
+  constructor(private readonly adminRepo: IAdminRepository) {}
+
+  async getAllUsers(
+    query: PaginationDTO,
+  ): Promise<CursorPaginationResult<AdminUserDTO>> {
+    const users = await this.adminRepo.getAllUsers(query.cursor, query.limit);
+    return toCursorPaginationResponse(users, toUserResponse);
+
+    return toCursorPaginationResponse(
+        users,
+        toUserResponse,
+      );
+  }
+  async getUserById(userId: string): Promise<AdminUserDTO> {
+    const user = await this.adminRepo.findUserById(userId);
+    if (!user) {
+      throw new AppError("User not found", 404);
+    }
+    return toUserResponse(user);
+  }
+
+
+  async getAllRoles(query:PaginationDTO): Promise<CursorPaginationResult<RoleListResponseDTO>> {
+    const result = await this.adminRepo.getAllRoles(query.cursor, query.limit);
+    return toCursorPaginationResponse(
+     result,
+     toRoleListResponse
+    );
+  }
+
+  async getRoleById(roleId: string): Promise<RoleDetailsResponseDTO> {
+    const role = await this.adminRepo.getRoleById(roleId);
+    if (!role) throw new AppError("Role not found", 404);
+    return toRoleDetailsResponse(role);
+  }
+
+  async createRole(data: CreateRoleDTO): Promise<RoleResponseDTO> {
+    const existingRole = await this.adminRepo.findRoleByName(data.name);
+    if (existingRole) {
+      throw new AppError("Role already exists", 409);
+    }
+    const role = await this.adminRepo.createRole(data);
+    return toRoleResponse(role);
+  }
+
+  async updateRole(
+    roleId: string,
+    data: UpdateRoleDTO,
+  ): Promise<RoleResponseDTO> {
+    if (!data.name) {
+      throw new AppError("Nothing to update", 400);
+    }
+    const role = await this.adminRepo.getRoleById(roleId);
+    if (!role) {
+      throw new AppError("Role not found", 404);
+    }
+    ensureRoleIsEditable(role);
+    const existingRole = await this.adminRepo.findRoleByName(data.name);
+    if (existingRole && existingRole.id !== roleId) {
+      throw new AppError("Role already exists", 409);
+    }
+
+    const updatedRole = await this.adminRepo.updateRole(roleId, {
+      name: data.name,
+    });
+    return toRoleResponse(updatedRole);
+  }
+  async deleteRole(roleId: string): Promise<void> {
+    const role = await this.adminRepo.getRoleById(roleId);
+
+    if (!role) {
+      throw new AppError("Role not found", 404);
+    }
+    ensureRoleIsDeletable(role);
+    await this.adminRepo.deleteRole(roleId);
+  }
+  private async getValidatedPermissionIds(
+    permissions: AssignPermissionsDTO["permissions"],
+  ): Promise<string[]> {
+    const dbPermissions =
+      await this.adminRepo.findPermissionsByNames(permissions);
+
+    if (dbPermissions.length !== permissions.length) {
+      throw new AppError("One or more permissions are invalid", 400);
+    }
+
+    return dbPermissions.map((permission) => permission.id);
+  }
+
+  async assignPermissionsToRole(
+    roleId: string,
+    data: AssignPermissionsDTO,
+  ): Promise<void> {
+    const role = await this.adminRepo.getRoleById(roleId);
+
+    if (!role) {
+      throw new AppError("Role not found", 404);
+    }
+
+    ensureRoleIsEditable(role);
+    const permissionIds = await this.getValidatedPermissionIds(
+      data.permissions,
+    );
+
+    await this.adminRepo.assignPermissionsToRole(roleId, permissionIds);
+    await permissionService.invalidateRoleUsers(roleId);
+  }
+  async assignRoleToUser(userId: string, data: AssignRoleDTO): Promise<void> {
+    const user = await this.adminRepo.findUserById(userId);
+    if (!user) {
+      throw new AppError("User not found", 404);
+    }
+    const role = await this.adminRepo.getRoleById(data.roleId);
+    if (!role) {
+      throw new AppError("Role not found", 404);
+    }
+    ensureRoleIsAssignable(role);
+    try {
+      await this.adminRepo.assignRoleToUser(userId, data.roleId);
+      await permissionService.invalidateUserPermissions(userId);
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === "P2002"
+      ) {
+        throw new AppError("Role already assigned to user", 409);
+      }
+
+      throw error;
+    }
+  }
+  async removeRoleFromUser(userId: string, data: RemoveRoleDTO): Promise<void> {
+    const user = await this.adminRepo.findUserById(userId);
+
+    if (!user) {
+      throw new AppError("User not found", 404);
+    }
+
+    await this.adminRepo.removeRoleFromUser(userId, data.roleId);
+    await permissionService.invalidateUserPermissions(userId);
+  }
+
+  async replaceRolePermissions(
+    roleId: string,
+    data: AssignPermissionsDTO,
+  ): Promise<void> {
+    const role = await this.adminRepo.getRoleById(roleId);
+
+    if (!role) {
+      throw new AppError("Role not found", 404);
+    }
+
+    ensureRoleIsEditable(role);
+    const permissionIds = await this.getValidatedPermissionIds(
+      data.permissions,
+    );
+    await this.adminRepo.replaceRolePermissions(roleId, permissionIds);
+    await permissionService.invalidateRoleUsers(roleId);
+
+  }
+}
+
+
+
+================================================
+FILE: src/modules/admin/admin.types.ts
+================================================
+import { Permission } from "@/common/constants/permissions";
+import { Prisma } from "@/generated/prisma/client";
+
+export interface AuthServiceDTO {
+  userId: string;
+  permission: Permission;
+}
+
+export interface AdminUserDTO {
+  id: string;
+  email: string;
+  isEmailVerified: boolean;
+  createdAt: Date;
+}
+
+export type AdminUserType = Prisma.UserGetPayload<{
+  select: {
+    id: true;
+    email: true;
+    isEmailVerified: true;
+    createdAt: true;
+  };
+}>;
+
+
+
+export type GetRoleByIdType = Prisma.RoleGetPayload<{
+  select: {
+    id: true;
+    name: true;
+    createdAt: true;
+    isSystem: true;
+
+    rolePermissions: {
+      select: {
+        assignedAt: true;
+        permission: {
+          select: {
+            id: true;
+            name: true;
+          };
+        };
+      };
+    };
+
+    userRoles: {
+      select: {
+        assignedAt: true;
+        user: {
+          select: {
+            id: true;
+            email: true;
+            createdAt: true;
+          };
+        };
+      };
+    };
+  };
+}>;
+
+export interface CreateRoleData {
+  name: string;
+}
+
+export interface UpdateRoleData {
+  name?: string;
+}
+
+export interface AssignPermissionsData {
+  permissions: Permission[];
+}
+
+export interface CursorPaginationResult<T> {
+  data: T[];
+  pagination: {
+    nextCursor: string | null;
+    hasMore: boolean;
+    limit: number;
+  };
+}
+
+export type UserRoleWithRoleType = Prisma.UserRoleGetPayload<{
+  include: {
+    role: true;
+  };
+}>;
+
+export type RoleListType = Prisma.RoleGetPayload<{
+  select: {
+    id: true;
+    name: true;
+    createdAt: true;
+    isSystem: true;
+
+    _count: {
+      select: {
+        userRoles: true;
+        rolePermissions: true;
+      };
+    };
+  };
+}>;
+
+
+
+
+
+
+================================================
+FILE: src/modules/auth/auth.constants.ts
+================================================
+[Empty file]
+
+
+================================================
+FILE: src/modules/auth/auth.container.ts
+================================================
+import { AuthRepository } from "./auth.repository";
+import { AuthService } from "./auth.service";
+
+const authRepository = new AuthRepository()
+const authService = new AuthService(authRepository);
+export {authRepository,authService}
+
+
+================================================
+FILE: src/modules/auth/auth.controller.ts
+================================================
+import { asyncHandler } from "@/common/middleware/async-handler";
+import type { Request, Response } from "express";
+import { authService } from "./auth.container";
+import { sendResponse } from "@/common/utils/send-response";
+import {
+  clearRefreshTokenCookie,
+  setRefreshTokenCookie,
+} from "@/common/utils/cookie";
+import { AppError } from "@/common/errors/app-error";
+
+export const registerUserController = asyncHandler(
+  async (req: Request, res: Response) => {
+    const result = await authService.register({
+      ...req.body,
+      userAgent: req.get("user-agent"),
+      ipAddress: req.ip,
+    });
+    setRefreshTokenCookie(res, result.refreshToken);
+    sendResponse(res, 201, {
+      success: true,
+      message: "User registered successfully",
+      data: {
+        user: result.user,
+        accessToken: result.accessToken,
+      },
+    });
+  },
+);
+
+export const loginUserController = asyncHandler(
+  async (req: Request, res: Response) => {
+    const result = await authService.login({
+      ...req.body,
+      userAgent: req.get("user-agent"),
+      ipAddress: req.ip,
+    });
+    setRefreshTokenCookie(res, result.refreshToken);
+
+    sendResponse(res, 200, {
+      success: true,
+      message: "User logged in successfully",
+      data: {
+        user: result.user,
+        accessToken: result.accessToken,
+      },
+    });
+  },
+);
+
+export const refreshTokenController = asyncHandler(
+  async (req: Request, res: Response) => {
+    const refreshToken = req.cookies.refreshToken;
+    if (!refreshToken) {
+         throw new AppError("Refresh token is missing", 401);
+       }
+    const result = await authService.refreshToken({ refreshToken });
+    setRefreshTokenCookie(res, result.refreshToken);
+    sendResponse(res, 200, {
+      success: true,
+      message: "Token refreshed successfully",
+      data: {
+        accessToken: result.accessToken,
+      },
+    });
+  },
+);
+export const logoutUserController = asyncHandler(
+  async (req: Request, res: Response) => {
+    const refreshToken = req.cookies.refreshToken;
+
+    if (!refreshToken) {
+      throw new AppError("Refresh token is missing", 401);
+    }
+    await authService.logout({
+      refreshToken,
+    });
+
+    clearRefreshTokenCookie(res);
+
+    sendResponse(res, 200, {
+      success: true,
+      message: "Logged out successfully",
+      data: null,
+    });
+  },
+);
+
+export const getCurrentUserController = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  const response = await authService.getCurrentUser({
+    userId: req.user!.userId,
+  });
+
+  sendResponse(res, 200, {
+    success: true,
+    message: "Current user fetched successfully",
+    data: response,
+  });
+};
+export const logoutAllSessionsController = asyncHandler(
+  async (req: Request, res: Response) => {
+    await authService.logoutAllSessions(req.user!.userId);
+    clearRefreshTokenCookie(res);
+    sendResponse(res, 200, {
+      success: true,
+      message: "Logged out from all devices successfully",
+      data:null
+    });
+  },
+);
+
+export const getUserPermissionsController = asyncHandler(
+  async (req: Request, res: Response) => {
+    const user = req.user;
+
+    const result = await authService.getUserPermissions(user!.userId );
+
+    sendResponse(res, 200, {
+      success: true,
+      message: "User permissions fetched successfully",
+      data: result,
+    });
+  },
+);
+
+
+
+================================================
+FILE: src/modules/auth/auth.interface.ts
+================================================
+import {
+  AuthAccount,
+  AuthProvider,
+  Prisma,
+  Session,
+  User,
+} from "@/generated/prisma/client";
+
+import {
+  AuthAccountWithUserType,
+  CreateAuthAccountDTO,
+  CreateSessionDTO,
+  CreateUserDTO,
+  CurrentUserDTO,
+  RotateSessionDTO,
+  UserRoleWithPermissionsType,
+} from "./auth.types";
+
+export type PrismaTransaction = Prisma.TransactionClient;
+
+export interface IAuthRepository {
+  createUser(
+    data: CreateUserDTO,
+    tx?: PrismaTransaction,
+  ): Promise<User>;
+
+  createAuthAccount(
+    data: CreateAuthAccountDTO,
+    tx?: PrismaTransaction,
+  ): Promise<AuthAccount>;
+
+  findUserByEmail(
+    email: string,
+    tx?: PrismaTransaction,
+  ): Promise<User | null>;
+
+  createSession(
+    data: CreateSessionDTO,
+    tx?: PrismaTransaction,
+  ): Promise<Session>;
+
+  withTransaction<T>(
+    callback: (tx: PrismaTransaction) => Promise<T>,
+  ): Promise<T>;
+
+  findActiveSessionById(
+    sessionId: string,
+  ): Promise<Session | null>;
+
+  rotateSessionRefreshToken(
+    data: RotateSessionDTO,
+  ): Promise<Session>;
+
+  revokeSession(
+    sessionId: string,
+  ): Promise<Session>;
+
+  revokeAllSessions(
+    userId: string,
+  ): Promise<number>;
+
+  findUserById(
+    userId: string,
+  ): Promise<CurrentUserDTO | null>;
+
+  getUserPermissions(
+    userId: string,
+  ): Promise<UserRoleWithPermissionsType[]>;
+
+  findUserIdsByRole(
+    roleId: string,
+  ): Promise<string[]>;
+
+  findAuthAccount(
+    provider: AuthProvider,
+    providerAccountId: string,
+  ): Promise<AuthAccountWithUserType | null>;
+}
+
+
+================================================
+FILE: src/modules/auth/auth.mapper.ts
+================================================
+import { User } from "@/generated/prisma/client";
+import { UserResponse } from "./auth.response";
+import { CurrentUserDTO } from "./auth.types";
+
+export const toUserResponse = (user: User): UserResponse => {
+  return {
+    id: user.id,
+    email: user.email,
+    isEmailVerified: user.isEmailVerified,
+    createdAt: user.createdAt,
+    updatedAt: user.updatedAt,
+  };
+};
+
+export const toCurrentUserResponse = (user: CurrentUserDTO) => {
+  return {
+    id: user.id,
+    email: user.email,
+    createdAt: user.createdAt,
+  };
+};
+
+
+
+================================================
+FILE: src/modules/auth/auth.repository.ts
+================================================
+import type {
+  AuthAccount,
+  AuthProvider,
+  Session,
+  User,
+} from "@/generated/prisma/client";
+import { IAuthRepository } from "./auth.interface";
+import { prisma } from "@/infrastructure/database";
+import {
+  AuthAccountWithUserType,
+  CreateAuthAccountDTO,
+  CreateSessionDTO,
+  CreateUserDTO,
+  CurrentUserType,
+  RotateSessionDTO,
+  UserRoleWithPermissionsType,
+} from "./auth.types";
+
+import { Prisma } from "@/generated/prisma/client";
+export type PrismaTransaction = Prisma.TransactionClient;
+
+export class AuthRepository implements IAuthRepository {
+  async withTransaction<T>(
+    callback: (tx: PrismaTransaction) => Promise<T>,
+  ): Promise<T> {
+    return prisma.$transaction(async (tx) => {
+      return callback(tx);
+    });
+  }
+  async createUser(data: CreateUserDTO, tx?: PrismaTransaction): Promise<User> {
+    const client = tx ?? prisma;
+
+    return client.user.create({
+      data,
+    });
+  }
+
+  async findUserByEmail(
+    email: string,
+    tx?: PrismaTransaction,
+  ): Promise<User | null> {
+    const client = tx ?? prisma;
+
+    return client.user.findUnique({
+      where: {
+        email,
+      },
+    });
+  }
+  async createSession(
+    data: CreateSessionDTO,
+    tx?: PrismaTransaction,
+  ): Promise<Session> {
+    const client = tx ?? prisma;
+
+    return client.session.create({
+      data,
+    });
+  }
+  async findActiveSessionById(sessionId: string): Promise<Session | null> {
+    return await prisma.session.findFirst({
+      where: { id: sessionId, revokedAt: null },
+    });
+  }
+  async rotateSessionRefreshToken(data: RotateSessionDTO): Promise<Session> {
+    return await prisma.session.update({
+      where: { id: data.sessionId },
+      data: {
+        refreshTokenHash: data.refreshTokenHash,
+        expiresAt: data.expiresAt,
+      },
+    });
+  }
+  async revokeSession(sessionId: string): Promise<Session> {
+    return prisma.session.update({
+      where: {
+        id: sessionId,
+      },
+      data: {
+        revokedAt: new Date(),
+      },
+    });
+  }
+  async revokeAllSessions(userId: string): Promise<number> {
+    const result = await prisma.session.updateMany({
+      where: { userId, revokedAt: null },
+      data: {
+        revokedAt: new Date(),
+      },
+    });
+    return result.count;
+  }
+  async findUserById(userId: string): Promise<CurrentUserType | null> {
+    return await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        createdAt: true,
+      },
+    });
+  }
+  async getUserPermissions(
+    userId: string,
+  ): Promise<UserRoleWithPermissionsType[]> {
+    return prisma.userRole.findMany({
+      where: {
+        userId,
+      },
+      select: {
+        role: {
+          select: {
+            name: true,
+
+            rolePermissions: {
+              select: {
+                permission: {
+                  select: {
+                    name: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+  }
+  async findUserIdsByRole(roleId: string): Promise<string[]> {
+    const userRoles = await prisma.userRole.findMany({
+      where: {
+        roleId,
+      },
+      select: {
+        userId: true,
+      },
+    });
+    return userRoles.map((userRole) => userRole.userId);
+  }
+
+  async findAuthAccount(
+    provider: AuthProvider,
+    providerAccountId: string,
+  ): Promise<AuthAccountWithUserType | null> {
+    return prisma.authAccount.findUnique({
+      where: {
+        provider_providerAccountId: {
+          provider,
+          providerAccountId,
+        },
+      },
+      include: { user: true },
+    });
+  }
+  async createAuthAccount(
+    data: CreateAuthAccountDTO,
+    tx?: PrismaTransaction,
+  ): Promise<AuthAccount> {
+    const client = tx ?? prisma;
+
+    return client.authAccount.create({
+      data,
+    });
+  }
+}
+
+
+
+================================================
+FILE: src/modules/auth/auth.response.ts
+================================================
+export interface UserResponse {
+  readonly id: string;
+  readonly email: string;
+  readonly isEmailVerified: boolean;
+  readonly createdAt: Date;
+  readonly updatedAt: Date;
+}
+
+export interface AuthTokens {
+  readonly accessToken: string;
+  readonly refreshToken: string;
+}
+
+export interface AuthResponse extends AuthTokens {
+  readonly user: UserResponse;
+}
+export interface RefreshTokenResponse extends AuthTokens {}
+
+export interface CurrentUserResponse {
+  id: string;
+  email: string;
+  createdAt: Date;
+}
+
+
+
+================================================
+FILE: src/modules/auth/auth.route.ts
+================================================
+import express from "express";
+import {
+  getCurrentUserController,
+  getUserPermissionsController,
+  loginUserController,
+  logoutAllSessionsController,
+  logoutUserController,
+  refreshTokenController,
+  registerUserController,
+} from "./auth.controller";
+import { validate } from "@/common/middleware/validate.middleware";
+import { loginUserSchema, registerUserSchema } from "./auth.schema";
+import { authenticate } from "@/common/middleware/auth.middleware";
+
+const router = express.Router();
+
+router
+  .route("/register")
+  .post(validate(registerUserSchema), registerUserController);
+router.route("/login").post(validate(loginUserSchema), loginUserController);
+router.route("/logout").post(logoutUserController);
+router.route("/logout-all").post(authenticate, logoutAllSessionsController);
+router.route("/refresh-token").post(refreshTokenController);
+router.route("/me").get(authenticate, getCurrentUserController);
+
+router
+  .route("/me/permissions")
+  .get(authenticate, getUserPermissionsController);
+export default router;
+
+
+
+================================================
+FILE: src/modules/auth/auth.schema.ts
+================================================
+import { z } from "zod";
+
+export const registerUserSchema = z.object({
+  email: z.email("Invalid email address").trim().toLowerCase(),
+
+  password: z
+    .string()
+    .min(8, "Password must be at least 8 characters long")
+    .max(128, "Password cannot exceed 128 characters")
+    .regex(/[a-z]/, "Password must contain at least one lowercase letter")
+    .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
+    .regex(/[0-9]/, "Password must contain at least one number")
+    .regex(
+      /[!@#$%^&*(),.?":{}|<>_\-\\[\]\\/~`+=;']/,
+      "Password must contain at least one special character",
+    ),
+}).strict();
+
+export const loginUserSchema = z.object({
+  email: z.email("Invalid email address").trim().toLowerCase(),
+  password:z.string().min(1,"Password is required")
+}).strict()
+
+
+export type RegisterUserDTO = z.infer<typeof registerUserSchema>;
+export type LoginUserDTO = z.infer<typeof loginUserSchema>;
+
+
+
+================================================
+FILE: src/modules/auth/auth.service.ts
+================================================
+import { AppError } from "@/common/errors/app-error";
+import { PasswordService } from "@/common/services/password.service";
+
+import { toCurrentUserResponse, toUserResponse } from "./auth.mapper";
+
+import type { IAuthRepository } from "./auth.interface";
+import type {
+  GetCurrentUserDTO,
+  LoginUserServiceDTO,
+  LogoutServiceDTO,
+  RefreshTokenServiceDTO,
+  RegisterUserServiceDTO,
+} from "./auth.types";
+import { generateSessionId } from "./auth.utils";
+import { JwtService } from "@/common/services/jwt.services";
+import { TokenService } from "@/common/services/token.service";
+import { env } from "@/config/env";
+import ms from "ms";
+import {
+  AuthResponse,
+  AuthTokens,
+  CurrentUserResponse,
+  RefreshTokenResponse,
+} from "./auth.response";
+import { Permission } from "@/common/constants/permissions";
+import { AuthProvider } from "@/generated/prisma/client";
+import { PrismaTransaction } from "./auth.interface";
+
+export class AuthService {
+  constructor(private readonly authRepo: IAuthRepository) {}
+
+  async createAuthenticatedSession(
+    userId: string,
+    ipAddress: string,
+    userAgent: string,
+    tx?: PrismaTransaction,
+  ): Promise<AuthTokens> {
+    const sessionId = generateSessionId();
+  
+    const accessToken = JwtService.signAccessToken({
+      userId,
+      sessionId,
+    });
+  
+    const refreshToken = JwtService.signRefreshToken({
+      userId,
+      sessionId,
+    });
+  
+    const refreshTokenHash = TokenService.hashRefreshToken(refreshToken);
+  
+    const refreshTokenExpiry = ms(env.JWT_REFRESH_TOKEN_EXPIRY);
+  
+    if (typeof refreshTokenExpiry !== "number") {
+      throw new AppError(
+        "Invalid refresh token expiry configuration",
+        500,
+      );
+    }
+  
+    const expiresAt = new Date(Date.now() + refreshTokenExpiry);
+  
+    await this.authRepo.createSession(
+      {
+        id: sessionId,
+        userId,
+        expiresAt,
+        refreshTokenHash,
+        ipAddress,
+        userAgent,
+      },
+      tx,
+    );
+  
+    return {
+      accessToken,
+      refreshToken,
+    };
+  }
+  async register(data: RegisterUserServiceDTO): Promise<AuthResponse> {
+    return this.authRepo.withTransaction(async (tx) => {
+      const existingUser = await this.authRepo.findUserByEmail(
+        data.email,
+        tx,
+      );
+  
+      if (existingUser) {
+        throw new AppError("User already exists", 400);
+      }
+  
+      const passwordHash = await PasswordService.hash(data.password);
+  
+      const user = await this.authRepo.createUser(
+        {
+          email: data.email,
+          passwordHash,
+        },
+        tx,
+      );
+  
+      const authSession = await this.createAuthenticatedSession(
+        user.id,
+        data.ipAddress,
+        data.userAgent,
+        tx,
+      );
+  
+      return {
+        user: toUserResponse(user),
+        ...authSession,
+      };
+    });
+  }
+  async login(data: LoginUserServiceDTO): Promise<AuthResponse> {
+    const user = await this.authRepo.findUserByEmail(data.email);
+
+    if (!user) {
+      throw new AppError("Invalid email or passoword", 401);
+    }
+
+    if (!user.passwordHash) {
+      throw new AppError("Invalid login method", 400);
+    }
+
+    const isPasswordValid = await PasswordService.verify(
+      data.password,
+      user.passwordHash,
+    );
+
+    if (!isPasswordValid) {
+      throw new AppError("Invalid email or password", 401);
+    }
+    const authSession = await this.createAuthenticatedSession(
+      user.id,
+      data.ipAddress,
+      data.userAgent,
+    );
+
+    return {
+      user: toUserResponse(user),
+      ...authSession,
+    };
+  }
+
+  async logout(data: LogoutServiceDTO): Promise<void> {
+    if (!data.refreshToken) return;
+
+    let payload;
+    try {
+      payload = JwtService.verifyRefreshToken(data.refreshToken);
+    } catch {
+      return;
+    }
+    await this.authRepo.revokeSession(payload.sessionId);
+  }
+  async refreshToken(
+    data: RefreshTokenServiceDTO,
+  ): Promise<RefreshTokenResponse> {
+    const { refreshToken } = data;
+  
+    const jwtPayload = JwtService.verifyRefreshToken(refreshToken);
+  
+  
+    const session = await this.authRepo.findActiveSessionById(
+      jwtPayload.sessionId,
+    );
+  
+  
+    if (!session) {
+      throw new AppError("Session not found", 404);
+    }
+  
+    if (session.expiresAt.getTime() < Date.now()) {
+      throw new AppError("Session has expired", 401);
+    }
+  
+    const isRefreshTokenValid = TokenService.verifyRefreshToken(
+      refreshToken,
+      session.refreshTokenHash,
+    );
+    
+  
+  
+    if (!isRefreshTokenValid) {
+      throw new AppError("Invalid refresh token", 401);
+    }
+  
+    const accessToken = JwtService.signAccessToken({
+      userId: jwtPayload.userId,
+      sessionId: jwtPayload.sessionId,
+    });
+  
+    const newRefreshToken = JwtService.signRefreshToken({
+      userId: jwtPayload.userId,
+      sessionId: jwtPayload.sessionId,
+    });
+  
+    const refreshTokenHash = TokenService.hashRefreshToken(
+      newRefreshToken,
+    );
+  
+    const expiry = ms(env.JWT_REFRESH_TOKEN_EXPIRY);
+  
+    if (typeof expiry !== "number") {
+      throw new AppError("Invalid refresh expiry configuration", 500);
+    }
+  
+    await this.authRepo.rotateSessionRefreshToken({
+      refreshTokenHash,
+      expiresAt: new Date(Date.now() + expiry),
+      sessionId: jwtPayload.sessionId,
+    });
+  
+    return {
+      accessToken,
+      refreshToken: newRefreshToken,
+    };
+  }
+  async getCurrentUser(data: GetCurrentUserDTO): Promise<CurrentUserResponse> {
+    const user = await this.authRepo.findUserById(data.userId);
+    if (!user) {
+      throw new AppError("User not found", 404);
+    }
+    return toCurrentUserResponse(user);
+  }
+  async logoutAllSessions(userId: string): Promise<void> {
+    await this.authRepo.revokeAllSessions(userId);
+  }
+
+  async getUserPermissions(userId: string): Promise<Permission[]> {
+    const userRoles = await this.authRepo.getUserPermissions(userId);
+
+    const permissions = userRoles.flatMap((userRole) =>
+      userRole.role.rolePermissions.map(
+        (rolePermission) => rolePermission.permission.name as Permission,
+      ),
+    );
+
+    return [...new Set(permissions)];
+  }
+
+  async loginWithGoogle(
+    googleId: string,
+    email: string,
+    ipAddress: string,
+    userAgent: string,
+  ): Promise<AuthResponse> {
+    const existingAuthAccount =
+      await this.authRepo.findAuthAccount(
+        AuthProvider.GOOGLE,
+        googleId,
+      );
+  
+    if (existingAuthAccount) {
+      const authSession = await this.createAuthenticatedSession(
+        existingAuthAccount.user.id,
+        ipAddress,
+        userAgent,
+      );
+  
+      return {
+        user: toUserResponse(existingAuthAccount.user),
+        ...authSession,
+      };
+    }
+  
+    return this.authRepo.withTransaction(async (tx) => {
+      let user = await this.authRepo.findUserByEmail(
+        email,
+        tx,
+      );
+  
+      if (!user) {
+        user = await this.authRepo.createUser(
+          {
+            email,
+            passwordHash: null,
+          },
+          tx,
+        );
+      }
+  
+      await this.authRepo.createAuthAccount(
+        {
+          userId: user.id,
+          provider: AuthProvider.GOOGLE,
+          providerAccountId: googleId,
+        },
+        tx,
+      );
+  
+      const authSession =
+        await this.createAuthenticatedSession(
+          user.id,
+          ipAddress,
+          userAgent,
+          tx,
+        );
+  
+      return {
+        user: toUserResponse(user),
+        ...authSession,
+      };
+    });
+  }
+}
+
+
+
+================================================
+FILE: src/modules/auth/auth.types.ts
+================================================
+import {  AuthProvider, Prisma } from "@/generated/prisma/client";
+import { LoginUserDTO, RegisterUserDTO } from "./auth.schema";
+
+export interface CreateSessionDTO {
+  readonly id: string;
+  readonly userId: string;
+  readonly refreshTokenHash: string;
+  readonly userAgent?: string;
+  readonly ipAddress?: string;
+  readonly expiresAt: Date;
+}
+
+export interface RegisterUserServiceDTO extends RegisterUserDTO {
+  readonly userAgent: string;
+  readonly ipAddress: string;
+}
+
+export interface LoginUserServiceDTO extends LoginUserDTO {
+  readonly userAgent: string;
+  readonly ipAddress: string;
+}
+
+export interface CreateUserDTO {
+  readonly email: string;
+  readonly passwordHash: string | null;
+}
+
+export interface RefreshTokenPayload {
+  readonly userId: string;
+  readonly sessionId: string;
+}
+
+export interface RefreshTokenServiceDTO {
+  readonly refreshToken: string;
+}
+
+export interface RotateSessionDTO {
+  readonly sessionId: string;
+  readonly refreshTokenHash: string;
+  readonly expiresAt: Date;
+}
+
+export interface LogoutServiceDTO {
+  readonly refreshToken?: string;
+}
+
+export interface GetCurrentUserDTO {
+  userId: string;
+}
+
+export interface CurrentUserDTO {
+  readonly id: string;
+  readonly email: string;
+  readonly createdAt: Date;
+}
+
+
+
+export type UserRoleWithPermissionsType = Prisma.UserRoleGetPayload<{
+  select: {
+    role: {
+      select: {
+        name: true;
+
+        rolePermissions: {
+          select: {
+            permission: {
+              select: {
+                name: true;
+              };
+            };
+          };
+        };
+      };
+    };
+  };
+}>;
+
+export interface CurrentUserType {
+  id:string;
+  email:string;
+  createdAt:Date;
+}
+
+export interface CreateAuthAccountDTO{
+  userId: string;
+  provider: AuthProvider;
+  providerAccountId:string
+}
+
+export type AuthAccountWithUserType = Prisma.AuthAccountGetPayload<{
+  include: {
+    user: true;
+  };
+}>;
+
+
+================================================
+FILE: src/modules/auth/auth.utils.ts
+================================================
+import { randomUUID } from "crypto";
+
+export const generateSessionId = (): string => {
+  return randomUUID();
+};
+
+
+
+================================================
+FILE: src/modules/auth/index.ts
+================================================
+[Empty file]
+
+
+================================================
+FILE: src/modules/auth/oauth/oauth.container.ts
+================================================
+import { GoogleOAuthService } from "./oauth.service";
+
+const googleOAuthService = new GoogleOAuthService();
+export { googleOAuthService };
+
+
+
+================================================
+FILE: src/modules/auth/oauth/oauth.controller.ts
+================================================
+import { asyncHandler } from "@/common/middleware/async-handler";
+import { Request, Response } from "express";
+import { googleOAuthService } from "./oauth.container";
+import { sendResponse } from "@/common/utils/send-response";
+import {
+  clearOAuthStateCookie,
+  OAUTH_STATE_COOKIE_NAME,
+  setOAuthStateCookie,
+} from "@/common/utils/oauth-cookie";
+import { GoogleCallbackDTO } from "./oauth.types";
+import { env } from "@/config/env";
+import { setRefreshTokenCookie } from "@/common/utils/cookie";
+
+export const redirectToGoogleController = asyncHandler(
+  async (_req: Request, res: Response) => {
+    const result = googleOAuthService.generateGoogleAuthUrl();
+    setOAuthStateCookie(res, result.state);
+    sendResponse(res, 200, {
+      success: true,
+      message: "Google OAuth url generated successfully",
+      data: {
+        url: result.url,
+      },
+    });
+  },
+);
+
+export const googleCallbackController = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { code, state } = req.query as unknown as GoogleCallbackDTO;
+
+    googleOAuthService.validateOAuthState(
+      req.cookies[OAUTH_STATE_COOKIE_NAME],
+      state,
+    );
+
+    clearOAuthStateCookie(res);
+    const result = await googleOAuthService.handleGoogleCallback(
+      code,
+      req.ip as string,
+      req.get("user-agent") ?? "unknown",
+    );
+    setRefreshTokenCookie(res, result.refreshToken);
+    res.redirect(`${env.FRONTEND_URL}/dashboard`);
+  },
+);
+
+
+
+================================================
+FILE: src/modules/auth/oauth/oauth.interface.ts
+================================================
+[Empty file]
+
+
+================================================
+FILE: src/modules/auth/oauth/oauth.repository.ts
+================================================
+[Empty file]
+
+
+================================================
+FILE: src/modules/auth/oauth/oauth.route.ts
+================================================
+import express from "express";
+import {
+  googleCallbackController,
+  redirectToGoogleController,
+} from "./oauth.controller";
+import { validate } from "@/common/middleware/validate.middleware";
+import { googleCallbackSchema } from "./oauth.schema";
+
+const router = express.Router();
+
+router.route("/google").get(redirectToGoogleController);
+
+router
+  .route("/google/callback")
+  .get(validate(googleCallbackSchema, "query"), googleCallbackController);
+
+export default router;
+
+
+
+================================================
+FILE: src/modules/auth/oauth/oauth.schema.ts
+================================================
+import { z } from "zod";
+
+export const googleCallbackSchema = z.object({
+  code: z.string().min(1, "Authorization code is required"),
+  state: z.string().min(1, "State is required"),
+});
+
+export type GoogleCallbackDTO = z.infer<typeof googleCallbackSchema>;
+
+
+================================================
+FILE: src/modules/auth/oauth/oauth.service.ts
+================================================
+import { googleService } from "@/common/services/google.service";
+import { generateOAuthState } from "./oauth.utils";
+import { GoogleAuthUrlResponse } from "./oauth.types";
+import { AppError } from "@/common/errors/app-error";
+import { authService } from "../auth.container";
+
+export class GoogleOAuthService {
+  generateGoogleAuthUrl(): GoogleAuthUrlResponse {
+    const state = generateOAuthState();
+    const url = googleService.generateAuthUrl(state);
+    return {
+      state,
+      url,
+    };
+  }
+  validateOAuthState(cookieState: string, state: string) {
+    if (!cookieState || !state || cookieState !== state) {
+      throw new AppError("Invalid OAuth state", 401);
+    }
+  }
+
+  async handleGoogleCallback(
+    code: string,
+    ipAddress: string,
+    userAgent: string,
+  ) {
+    const tokens = await googleService.exchangeCodeForTokens(code);
+
+    if (!tokens.id_token) {
+      throw new AppError("Google ID token missing", 400);
+    }
+
+    const payload = await googleService.verifyToken(tokens.id_token);
+    if (!payload.sub || !payload.email) {
+      throw new AppError("Google account information is incomplete", 400);
+    }
+
+    return authService.loginWithGoogle(
+      payload.sub,
+      payload.email,
+      ipAddress,
+      userAgent,
+    );
+  }
+}
+
+
+
+================================================
+FILE: src/modules/auth/oauth/oauth.types.ts
+================================================
+export interface GoogleAuthUrlResponse {
+  url: string;
+  state: string;
+}
+
+export interface GoogleCallbackDTO {
+  code: string;
+  state: string;
+}
+
+
+================================================
+FILE: src/modules/auth/oauth/oauth.utils.ts
+================================================
+import crypto from "crypto"
+
+export const generateOAuthState = (): string => {
+  return crypto.randomBytes(32).toString("hex")
+}
+

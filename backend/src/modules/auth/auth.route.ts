@@ -11,16 +11,17 @@ import {
 import { validate } from "@/common/middleware/validate.middleware";
 import { loginUserSchema, registerUserSchema } from "./auth.schema";
 import { authenticate } from "@/common/middleware/auth.middleware";
+import { registerRateLimiter ,loginRateLimiter,refreshTokenRateLimiter} from "@/common/middleware/rate-limit/rate-limiters";
 
 const router = express.Router();
 
 router
   .route("/register")
-  .post(validate(registerUserSchema), registerUserController);
-router.route("/login").post(validate(loginUserSchema), loginUserController);
+  .post(registerRateLimiter,validate(registerUserSchema), registerUserController);
+router.route("/login").post(loginRateLimiter,validate(loginUserSchema), loginUserController);
 router.route("/logout").post(logoutUserController);
 router.route("/logout-all").post(authenticate, logoutAllSessionsController);
-router.route("/refresh-token").post(refreshTokenController);
+router.route("/refresh-token").post(refreshTokenRateLimiter,refreshTokenController);
 router.route("/me").get(authenticate, getCurrentUserController);
 
 router

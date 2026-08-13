@@ -5,13 +5,17 @@ import {
 } from "./oauth.controller";
 import { validate } from "@/common/middleware/validate.middleware";
 import { googleCallbackSchema } from "./oauth.schema";
+import {
+  oauthStartLimiter,
+  oauthCallbackLimiter,
+} from "@/common/middleware/rate-limit/rate-limiters";
 
 const router = express.Router();
 
-router.route("/google").get(redirectToGoogleController);
+router.route("/google").get(oauthStartLimiter,redirectToGoogleController);
 
 router
   .route("/google/callback")
-  .get(validate(googleCallbackSchema, "query"), googleCallbackController);
+  .get(oauthCallbackLimiter,validate(googleCallbackSchema, "query"), googleCallbackController);
 
 export default router;
